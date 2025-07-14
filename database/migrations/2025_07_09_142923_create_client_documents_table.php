@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('client_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
-            $table->string('cpf')->nullable();
+            $table->char('cpf', 11)->unique()->nullable();
             $table->string('rg')->nullable();
             $table->string('cnh')->nullable();
             $table->string('pis')->nullable();
