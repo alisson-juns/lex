@@ -4,11 +4,11 @@ namespace App\Filament\User\Resources;
 
 use App\Filament\User\Resources\ClientResource\Pages;
 use App\Filament\User\Resources\ClientResource\RelationManagers;
-use App\Models\Client;
-use App\Models\ClientDocument;
-use App\Models\ClientAddress;
-use App\Models\ClientSpouse;
-use App\Models\ClientWard;
+use App\Models\Client\Client;
+use App\Models\Client\Document;
+use App\Models\Client\Address;
+use App\Models\Client\Spouse;
+use App\Models\Client\Ward;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;

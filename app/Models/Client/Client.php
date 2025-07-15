@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Client;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -23,26 +23,26 @@ class Client extends Model
 
     public function documents(): HasOne
     {
-        return $this->hasOne(ClientDocument::class);
+        return $this->hasOne(Document::class);
     }
 
     public function address(): HasOne
     {
-        return $this->hasOne(ClientAddress::class);
+        return $this->hasOne(Address::class);
     }
 
     public function contacts(): HasOne
     {
-        return $this->hasOne(ClientContact::class);
+        return $this->hasOne(Contact::class);
     }
 
     public function spouse(): HasOne
     {
-        return $this->hasOne(ClientSpouse::class);
+        return $this->hasOne(Spouse::class);
     }
 
     public function wards(): HasMany
     {
-        return $this->hasMany(ClientWard::class);
+        return $this->hasMany(Ward::class);
     }
 }
