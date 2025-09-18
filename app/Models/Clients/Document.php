@@ -1,23 +1,23 @@
 <?php
 
-namespace App\Models\Client;
+namespace App\Models\Clients;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Contact extends Model
+class Document extends Model
 {
-    protected $table = 'client_contacts';
-    
+    protected $table = 'client_documents';
+
     protected $fillable = [
         'client_id',
-        'email',
-        'cellphone',
-        'phone',
-        'optional_email',
-        'message_cell_phone',
-        'message_phone',
-        'note',
+        'cpf',
+        'rg',
+        'cnh',
+        'pis',
+        'ctps',
+        'rnm',
+        'other_documents',
     ];
 
     public function client(): BelongsTo

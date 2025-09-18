@@ -61,5 +61,6 @@ class UserPanelProvider extends PanelProvider
                 \App\Http\Middleware\RedirectToProperPanelMiddleware::class,
                 Authenticate::class,
             ]);
+            //->topNavigation();
     }
 }

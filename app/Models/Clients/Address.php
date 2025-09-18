@@ -1,25 +1,23 @@
 <?php
 
-namespace App\Models\Client;
+namespace App\Models\Clients;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Ward extends Model
+class Address extends Model
 {
-    protected $table = 'client_wards';
-
+    protected $table = 'client_addresses';
+    
     protected $fillable = [
         'client_id',
-        'name',
-        'cpf',
-        'rg',
-        'date_of_birth',
-        'note',
-    ];
-
-    protected $casts = [
-        'date_of_birth' => 'date',
+        'street',
+        'number',
+        'complement',
+        'zipcode',
+        'district',
+        'city',
+        'state',
     ];
 
     public function client(): BelongsTo

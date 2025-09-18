@@ -4,11 +4,11 @@ namespace App\Filament\User\Resources;
 
 use App\Filament\User\Resources\ClientResource\Pages;
 use App\Filament\User\Resources\ClientResource\RelationManagers;
-use App\Models\Client\Client;
-use App\Models\Client\Document;
-use App\Models\Client\Address;
-use App\Models\Client\Spouse;
-use App\Models\Client\Ward;
+use App\Models\Clients\Client;
+use App\Models\Clients\Document;
+use App\Models\Clients\Address;
+use App\Models\Clients\Spouse;
+use App\Models\Clients\Ward;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
@@ -28,7 +28,11 @@ class ClientResource extends Resource
 
     protected static ?string $modelLabel = 'Cliente';
 
-    protected static ?string $navigationLabel = 'Controle de clientes';
+    protected static ?string $navigationGroup = 'Controle de Clientes';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Pessoa Física';
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
@@ -98,7 +102,7 @@ class ClientResource extends Resource
                                         ->maxlength(14)
                                         ->rule('cpf')
                                         ->required()
-                                        ->unique(ClientDocument::class, 'cpf', ignoreRecord: true)
+                                        ->unique(Document::class, 'cpf', ignoreRecord: true)
                                         ->validationMessages([
                                             'required' => 'O campo CPF é obrigatório.',
                                             'cpf' => 'Número de CPF inválido.',
@@ -219,6 +223,68 @@ class ClientResource extends Resource
                                 ->columns(2),
                         ]),
 
+                    Step::make('Dados Bancários')
+                        ->icon('heroicon-m-currency-dollar')
+                        ->description('Informações bancárias do cliente')
+                        ->schema([
+                            Forms\Components\Toggle::make('has_bank_accounts')
+                                ->label('Cliente possui contas bancárias?')
+                                ->live()
+                                ->dehydrated(false)
+                                ->afterStateHydrated(function ($component, $state, $record) {
+                                    $component->state($record?->bankAccounts()->exists() ?? false);
+                                })
+                                ->afterStateUpdated(function ($state, $set) {
+                                    if (!$state) {
+                                        $set('bankAccounts', []);
+                                    }
+                                }),
+
+                            Forms\Components\Repeater::make('bankAccounts')
+                                ->relationship('bankAccounts')
+                                ->schema([
+                                    Forms\Components\Grid::make(2)
+                                        ->schema([
+                                            Forms\Components\TextInput::make('bank_number')
+                                                ->label('Código do banco')
+                                                ->numeric()
+                                                ->maxLength(3)
+                                                ->placeholder('000'),
+
+                                            Forms\Components\TextInput::make('bank_name')
+                                                ->label('Nome do banco')
+                                                ->required()
+                                                ->maxLength(255)
+                                                ->placeholder('Ex: Banco do Brasil'),
+
+                                            Forms\Components\TextInput::make('agency')
+                                                ->label('Agência')
+                                                ->required()
+                                                ->maxLength(20)
+                                                ->placeholder('0000-0'),
+
+                                            Forms\Components\TextInput::make('account')
+                                                ->label('Conta')
+                                                ->required()
+                                                ->maxLength(20)
+                                                ->placeholder('00000-0'),
+                                        ])
+                                ])
+                                ->itemLabel(
+                                    fn(array $state): ?string =>
+                                    $state['bank_name']
+                                        ? "{$state['bank_name']} - Ag: {$state['agency']}"
+                                        : 'Nova conta bancária'
+                                )
+                                ->addActionLabel('Adicionar conta bancária')
+                                ->deleteAction(
+                                    fn($action) => $action->requiresConfirmation()
+                                )
+                                ->reorderable()
+                                ->collapsible()
+                                ->visible(fn(callable $get) => $get('has_bank_accounts') === true),
+                        ]),
+
                     Step::make('Dados da Esposa')
                         ->icon('heroicon-m-user-plus')
                         ->description('Informações da esposa (se aplicável)')
@@ -294,7 +360,7 @@ class ClientResource extends Resource
                                                 ->mask('999.999.999-99')
                                                 ->maxlength(14)
                                                 ->rule('cpf')
-                                                ->unique(ClientSpouse::class, 'cpf', ignoreRecord: true)
+                                                ->unique(Spouse::class, 'cpf', ignoreRecord: true)
                                                 ->validationMessages([
                                                     'cpf' => 'Número de CPF inválido.',
                                                     'unique' => 'Este CPF já foi registrado.',
@@ -337,7 +403,7 @@ class ClientResource extends Resource
                                         ])
                                         ->columns(2),
                                 ])
-                                ->visible(fn (callable $get) => $get('has_spouse') === true),
+                                ->visible(fn(callable $get) => $get('has_spouse') === true),
                         ]),
 
                     Step::make('Filhos/Tutelados/Curatelados')
@@ -367,7 +433,7 @@ class ClientResource extends Resource
                                                 ->required()
                                                 ->maxLength(255)
                                                 ->columnSpan(2),
-                                            
+
                                             Forms\Components\TextInput::make('cpf')
                                                 ->label('CPF')
                                                 ->mask('999.999.999-99')
@@ -378,35 +444,35 @@ class ClientResource extends Resource
                                                     'cpf' => 'Número de CPF inválido.',
                                                     'unique' => 'Este CPF já foi registrado.',
                                                 ]),
-                                            
+
                                             Forms\Components\TextInput::make('rg')
                                                 ->label('RG')
                                                 ->mask('99.999.999-9')
                                                 ->maxlength(12),
-                                            
+
                                             Forms\Components\DatePicker::make('date_of_birth')
                                                 ->label('Data de nascimento')
                                                 ->columnSpan(2),
-                                            
+
                                             Forms\Components\Textarea::make('note')
                                                 ->label('Observações')
                                                 ->rows(2)
                                                 ->columnSpan(2),
                                         ])
                                 ])
-                                ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Novo dependente')
+                                ->itemLabel(fn(array $state): ?string => $state['name'] ?? 'Novo dependente')
                                 ->addActionLabel('Adicionar dependente')
                                 ->deleteAction(
-                                    fn ($action) => $action->requiresConfirmation()
+                                    fn($action) => $action->requiresConfirmation()
                                 )
                                 ->reorderable()
                                 ->collapsible()
-                                ->visible(fn (callable $get) => $get('has_wards') === true),
+                                ->visible(fn(callable $get) => $get('has_wards') === true),
                         ]),
                 ])
-                ->skippable() // Esta linha permite navegação livre entre steps
-                ->columnSpan('full'),
-                
+                    ->skippable() // Esta linha permite navegação livre entre steps
+                    ->columnSpan('full'),
+
             ]);
     }
 

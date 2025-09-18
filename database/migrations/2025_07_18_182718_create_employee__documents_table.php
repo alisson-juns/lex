@@ -6,12 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
+    public function up()
     {
-        Schema::create('client_documents', function (Blueprint $table) {
+        Schema::create('employee_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
-            $table->char('cpf', 14)->unique()->nullable();
+            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
+            $table->string('cpf', 14)->unique();
             $table->string('rg')->nullable();
             $table->string('cnh')->nullable();
             $table->string('pis')->nullable();
@@ -19,11 +19,13 @@ return new class extends Migration
             $table->string('rnm')->nullable();
             $table->text('other_documents')->nullable();
             $table->timestamps();
+            
+            $table->index('cpf');
         });
     }
 
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('client_documents');
+        Schema::dropIfExists('employee_documents');
     }
 };

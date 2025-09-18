@@ -33,4 +33,6 @@ protected static ?string $modelLabel = 'Usuários';
 
 protected static ?string $navigationLabel = 'Usuários';
 
-protected static ?string $navigationGroup = 'Controle de Usuários';
+protected static ?string $navigationGroup = 'Controle de Usuários'; //grupo de navegação
+
+protected static ?int $navigationSort = 3; //posição no grupo de navegação
