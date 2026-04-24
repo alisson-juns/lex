@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Enterprises;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -15,6 +15,6 @@ class Enterprise extends Model
 
     public function documents(): HasOne
     {
-        return $this->hasOne(Document::class);
+        return $this->hasOne(EnterpriseDocument::class);
     }
 }

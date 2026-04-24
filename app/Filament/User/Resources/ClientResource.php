@@ -4,11 +4,9 @@ namespace App\Filament\User\Resources;
 
 use App\Filament\User\Resources\ClientResource\Pages;
 use App\Filament\User\Resources\ClientResource\RelationManagers;
-use App\Models\Clients\Client;
-use App\Models\Clients\Document;
-use App\Models\Clients\Address;
-use App\Models\Clients\Spouse;
-use App\Models\Clients\Ward;
+use App\Models\Client;
+use App\Models\ClientSpouse;
+use App\Models\Ward;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
@@ -94,7 +92,7 @@ class ClientResource extends Resource
                         ->description('Documentação do cliente')
                         ->schema([
                             Forms\Components\Group::make()
-                                ->relationship('documents')
+                                ->relationship('client_documents')
                                 ->schema([
                                     Forms\Components\TextInput::make('cpf')
                                         ->label('CPF')
@@ -102,7 +100,7 @@ class ClientResource extends Resource
                                         ->maxlength(14)
                                         ->rule('cpf')
                                         ->required()
-                                        ->unique(Document::class, 'cpf', ignoreRecord: true)
+                                        ->unique('client_documents', 'cpf', ignoreRecord: true)
                                         ->validationMessages([
                                             'required' => 'O campo CPF é obrigatório.',
                                             'cpf' => 'Número de CPF inválido.',
@@ -146,7 +144,7 @@ class ClientResource extends Resource
                         ->description('Correspondência do cliente')
                         ->schema([
                             Forms\Components\Group::make()
-                                ->relationship('address')
+                                ->relationship('client_addresses')
                                 ->schema([
                                     Cep::make('zipcode')
                                         ->label('CEP')
@@ -190,7 +188,7 @@ class ClientResource extends Resource
                         ->description('E-mail e telefone do cliente')
                         ->schema([
                             Forms\Components\Group::make()
-                                ->relationship('contacts')
+                                ->relationship('client_contacts')
                                 ->schema([
                                     Forms\Components\TextInput::make('email')
                                         ->label('E-mail')
@@ -232,16 +230,16 @@ class ClientResource extends Resource
                                 ->live()
                                 ->dehydrated(false)
                                 ->afterStateHydrated(function ($component, $state, $record) {
-                                    $component->state($record?->bankAccounts()->exists() ?? false);
+                                    $component->state($record?->client_bank_accounts()->exists() ?? false);
                                 })
                                 ->afterStateUpdated(function ($state, $set) {
                                     if (!$state) {
-                                        $set('bankAccounts', []);
+                                        $set('client_bank_accounts', []);
                                     }
                                 }),
 
-                            Forms\Components\Repeater::make('bankAccounts')
-                                ->relationship('bankAccounts')
+                            Forms\Components\Repeater::make('client_bank_accounts')
+                                ->relationship('client_bank_accounts')
                                 ->schema([
                                     Forms\Components\Grid::make(2)
                                         ->schema([
@@ -360,7 +358,7 @@ class ClientResource extends Resource
                                                 ->mask('999.999.999-99')
                                                 ->maxlength(14)
                                                 ->rule('cpf')
-                                                ->unique(Spouse::class, 'cpf', ignoreRecord: true)
+                                                ->unique(ClientSpouse::class, 'cpf', ignoreRecord: true)
                                                 ->validationMessages([
                                                     'cpf' => 'Número de CPF inválido.',
                                                     'unique' => 'Este CPF já foi registrado.',
@@ -482,9 +480,9 @@ class ClientResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable()
                     ->label('Nome'),
-                Tables\Columns\TextColumn::make('documents.cpf')
+                Tables\Columns\TextColumn::make('client_documents.cpf')
                     ->label('CPF'),
-                Tables\Columns\TextColumn::make('contacts.email')
+                Tables\Columns\TextColumn::make('client_contacts.email')
                     ->label('E-mail'),
                 Tables\Columns\TextColumn::make('contacts.cellphone')
                     ->label('Celular'),

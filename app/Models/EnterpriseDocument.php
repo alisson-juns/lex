@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models\Enterprises;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Document extends Model
+class EnterpriseDocument extends Model
 {
     protected $table = 'enterprise_documents';
 

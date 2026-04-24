@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models\Clients;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Ward extends Model
+class ClientWard extends Model
 {
     protected $table = 'client_wards';
 

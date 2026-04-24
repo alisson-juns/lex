@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models\Clients;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Spouse extends Model
+class ClientSpouse extends Model
 {
     protected $table = 'client_spouses';
 

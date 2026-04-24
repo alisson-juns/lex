@@ -1,21 +1,23 @@
 <?php
 
-namespace App\Models\Clients;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BankAccount extends Model
+class ClientDocument extends Model
 {
-    protected $table = 'client_bank_accounts';
+    protected $table = 'client_documents';
 
     protected $fillable = [
-
         'client_id',
-        'bank_number',
-        'bank_name',
-        'agency',
-        'account',
+        'cpf',
+        'rg',
+        'cnh',
+        'pis',
+        'ctps',
+        'rnm',
+        'other_documents',
     ];
 
     public function client(): BelongsTo

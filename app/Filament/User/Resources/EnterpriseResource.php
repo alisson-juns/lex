@@ -3,8 +3,8 @@
 namespace App\Filament\User\Resources;
 
 use App\Filament\User\Resources\EnterpriseResource\Pages;
-use App\Models\Enterprises\Enterprise;
-use App\Models\Enterprises\Document;
+use App\Models\Enterprise;
+use App\Models\EnterpriseDocument;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -63,7 +63,7 @@ class EnterpriseResource extends Resource
                                         ->mask('99.999.999/9999-99')
                                         ->rule('cnpj')
                                         ->maxLength(18)
-                                        ->unique(Document::class, 'cnpj', ignoreRecord: true)
+                                        ->unique(EnterpriseDocument::class, 'cnpj', ignoreRecord: true)
                                         ->validationMessages([
                                             'required' => 'O campo CNPJ é obrigatório.',
                                             'cnpj' => 'Número de CNPJ inválido.',
