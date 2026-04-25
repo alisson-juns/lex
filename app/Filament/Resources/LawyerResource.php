@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\EmployeeResource\Pages;
-use App\Models\Employee;
+use App\Filament\Resources\LawyerResource\Pages;
+use App\Models\Lawyer;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
@@ -15,14 +15,14 @@ use Leandrocfe\FilamentPtbrFormFields\Cep;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class EmployeeResource extends Resource
+class LawyerResource extends Resource
 {
-    protected static ?string $model = Employee::class;
-    protected static ?string $navigationIcon = 'heroicon-o-identification';
-    protected static ?string $navigationGroup = 'Controle de Funcionários';
-    protected static ?int $navigationSort = 2;
-    protected static ?string $navigationLabel = 'Funcionários';
-    protected static ?string $modelLabel = 'Funcionário';
+    protected static ?string $model = Lawyer::class;
+    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static ?string $navigationGroup = 'Controle de Advogados';
+    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationLabel = 'Advogados';
+    protected static ?string $modelLabel = 'Advogado';
 
     public static function form(Form $form): Form
     {
@@ -31,15 +31,14 @@ class EmployeeResource extends Resource
                 Wizard::make([
                     Step::make('Dados Pessoais')
                         ->icon('heroicon-m-user')
-                        ->description('Informações principais do funcionário')
+                        ->description('Informações principais do advogado')
                         ->schema([
                             Forms\Components\TextInput::make('name')
                                 ->label('Nome')
                                 ->required()
                                 ->maxLength(255),
                             Forms\Components\DatePicker::make('date_of_birth')
-                                ->label('Data de nascimento')
-                                ->required(),
+                                ->label('Data de nascimento'),
                             Forms\Components\Select::make('gender')
                                 ->label('Gênero')
                                 ->options([
@@ -69,9 +68,6 @@ class EmployeeResource extends Resource
                                 ->label('Nacionalidade')
                                 ->default('Brasileira')
                                 ->maxLength(255),
-                            Forms\Components\Select::make('occupation_id')
-                                ->label('Cargo')
-                                ->relationship('occupation', 'title'),
                             Forms\Components\Toggle::make('active')
                                 ->label('Ativo')
                                 ->default(true),
@@ -82,12 +78,36 @@ class EmployeeResource extends Resource
                         ])
                         ->columns(2),
 
+                    Step::make('OAB')
+                        ->icon('heroicon-m-identification')
+                        ->description('Dados da inscrição na OAB')
+                        ->schema([
+                            Forms\Components\TextInput::make('oab')
+                                ->label('Número OAB')
+                                ->required()
+                                ->unique('lawyers', 'oab', ignoreRecord: true)
+                                ->maxLength(255)
+                                ->validationMessages([
+                                    'required' => 'O número da OAB é obrigatório.',
+                                    'unique' => 'Este número de OAB já está registrado.',
+                                ]),
+                            Forms\Components\TextInput::make('oab_state')
+                                ->label('Estado (OAB)')
+                                ->maxLength(2),
+                            Forms\Components\TextInput::make('oab_subsection')
+                                ->label('Subseção')
+                                ->maxLength(255),
+                            Forms\Components\DatePicker::make('oab_date')
+                                ->label('Data de inscrição'),
+                        ])
+                        ->columns(2),
+
                     Step::make('Documentos')
                         ->icon('heroicon-m-document-text')
-                        ->description('Documentação do funcionário')
+                        ->description('Documentação do advogado')
                         ->schema([
                             Forms\Components\Group::make()
-                                ->relationship('employee_documents')
+                                ->relationship('lawyer_documents')
                                 ->schema([
                                     Forms\Components\TextInput::make('cpf')
                                         ->label('CPF')
@@ -95,7 +115,7 @@ class EmployeeResource extends Resource
                                         ->maxLength(14)
                                         ->rule('cpf')
                                         ->required()
-                                        ->unique('employee_documents', 'cpf', ignoreRecord: true)
+                                        ->unique('lawyer_documents', 'cpf', ignoreRecord: true)
                                         ->validationMessages([
                                             'required' => 'O campo CPF é obrigatório.',
                                             'cpf' => 'Número de CPF inválido.',
@@ -137,10 +157,10 @@ class EmployeeResource extends Resource
 
                     Step::make('Endereço')
                         ->icon('heroicon-m-map-pin')
-                        ->description('Endereço do funcionário')
+                        ->description('Endereço do advogado')
                         ->schema([
                             Forms\Components\Group::make()
-                                ->relationship('employee_addresses')
+                                ->relationship('lawyer_addresses')
                                 ->schema([
                                     Cep::make('zipcode')
                                         ->label('CEP')
@@ -181,10 +201,10 @@ class EmployeeResource extends Resource
 
                     Step::make('Contatos')
                         ->icon('heroicon-m-phone')
-                        ->description('E-mail e telefone do funcionário')
+                        ->description('E-mail e telefone do advogado')
                         ->schema([
                             Forms\Components\Group::make()
-                                ->relationship('employee_contacts')
+                                ->relationship('lawyer_contacts')
                                 ->schema([
                                     Forms\Components\TextInput::make('email')
                                         ->label('E-mail')
@@ -231,8 +251,11 @@ class EmployeeResource extends Resource
                     ->label('Nome')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('occupation.title')
-                    ->label('Cargo')
+                Tables\Columns\TextColumn::make('oab')
+                    ->label('OAB')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('oab_state')
+                    ->label('Estado')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('active')
                     ->label('Ativo')
@@ -273,10 +296,10 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEmployees::route('/'),
-            'create' => Pages\CreateEmployee::route('/create'),
-            'view' => Pages\ViewEmployee::route('/{record}'),
-            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+            'index' => Pages\ListLawyers::route('/'),
+            'create' => Pages\CreateLawyer::route('/create'),
+            'view' => Pages\ViewLawyer::route('/{record}'),
+            'edit' => Pages\EditLawyer::route('/{record}/edit'),
         ];
     }
 }

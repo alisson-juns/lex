@@ -3,10 +3,9 @@
 namespace App\Filament\User\Resources;
 
 use App\Filament\User\Resources\ClientResource\Pages;
-use App\Filament\User\Resources\ClientResource\RelationManagers;
 use App\Models\Client;
 use App\Models\ClientSpouse;
-use App\Models\Ward;
+use App\Models\ClientWard;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
@@ -14,24 +13,17 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Leandrocfe\FilamentPtbrFormFields\Cep;
-use Filament\Forms\Components\TextInput;
-use Filament\Resources\RelationManagers\RelationGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Leandrocfe\FilamentPtbrFormFields\Cep;
 
 class ClientResource extends Resource
 {
     protected static ?string $model = Client::class;
-
     protected static ?string $modelLabel = 'Cliente';
-
     protected static ?string $navigationGroup = 'Controle de Clientes';
-
     protected static ?int $navigationSort = 1;
-
     protected static ?string $navigationLabel = 'Pessoa Física';
-
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     public static function form(Form $form): Form
@@ -83,7 +75,8 @@ class ClientResource extends Resource
                                 ->maxLength(255),
                             Forms\Components\Textarea::make('note')
                                 ->label('Observações')
-                                ->rows(3),
+                                ->rows(3)
+                                ->columnSpanFull(),
                         ])
                         ->columns(2),
 
@@ -97,7 +90,7 @@ class ClientResource extends Resource
                                     Forms\Components\TextInput::make('cpf')
                                         ->label('CPF')
                                         ->mask('999.999.999-99')
-                                        ->maxlength(14)
+                                        ->maxLength(14)
                                         ->rule('cpf')
                                         ->required()
                                         ->unique('client_documents', 'cpf', ignoreRecord: true)
@@ -109,12 +102,12 @@ class ClientResource extends Resource
                                     Forms\Components\TextInput::make('rg')
                                         ->label('RG')
                                         ->mask('99.999.999-9')
-                                        ->maxlength(12),
+                                        ->maxLength(12),
                                     Forms\Components\TextInput::make('cnh')
                                         ->label('CNH')
                                         ->mask('99999999999')
                                         ->rule('cnh')
-                                        ->maxlength(11)
+                                        ->maxLength(11)
                                         ->validationMessages([
                                             'cnh' => 'Número de CNH inválido.',
                                         ]),
@@ -122,19 +115,20 @@ class ClientResource extends Resource
                                         ->label('PIS')
                                         ->mask('999.99999.99-9')
                                         ->rule('pis')
-                                        ->maxlength(14)
+                                        ->maxLength(14)
                                         ->validationMessages([
                                             'pis' => 'Número de PIS inválido.',
                                         ]),
                                     Forms\Components\TextInput::make('ctps')
                                         ->label('CTPS')
-                                        ->maxlength(20),
+                                        ->maxLength(20),
                                     Forms\Components\TextInput::make('rnm')
                                         ->label('RNM')
-                                        ->maxlength(20),
+                                        ->maxLength(20),
                                     Forms\Components\Textarea::make('other_documents')
                                         ->label('Outros documentos')
-                                        ->rows(3),
+                                        ->rows(3)
+                                        ->columnSpanFull(),
                                 ])
                                 ->columns(2),
                         ]),
@@ -157,7 +151,7 @@ class ClientResource extends Resource
                                                 'complement' => 'complemento',
                                                 'district' => 'bairro',
                                                 'city' => 'localidade',
-                                                'state' => 'uf'
+                                                'state' => 'uf',
                                             ]
                                         )
                                         ->live(onBlur: true),
@@ -216,7 +210,8 @@ class ClientResource extends Resource
                                         ->maxLength(14),
                                     Forms\Components\Textarea::make('note')
                                         ->label('Observações')
-                                        ->rows(3),
+                                        ->rows(3)
+                                        ->columnSpanFull(),
                                 ])
                                 ->columns(2),
                         ]),
@@ -229,7 +224,7 @@ class ClientResource extends Resource
                                 ->label('Cliente possui contas bancárias?')
                                 ->live()
                                 ->dehydrated(false)
-                                ->afterStateHydrated(function ($component, $state, $record) {
+                                ->afterStateHydrated(function ($component, $record) {
                                     $component->state($record?->client_bank_accounts()->exists() ?? false);
                                 })
                                 ->afterStateUpdated(function ($state, $set) {
@@ -237,7 +232,6 @@ class ClientResource extends Resource
                                         $set('client_bank_accounts', []);
                                     }
                                 }),
-
                             Forms\Components\Repeater::make('client_bank_accounts')
                                 ->relationship('client_bank_accounts')
                                 ->schema([
@@ -248,50 +242,44 @@ class ClientResource extends Resource
                                                 ->numeric()
                                                 ->maxLength(3)
                                                 ->placeholder('000'),
-
                                             Forms\Components\TextInput::make('bank_name')
                                                 ->label('Nome do banco')
                                                 ->required()
                                                 ->maxLength(255)
                                                 ->placeholder('Ex: Banco do Brasil'),
-
                                             Forms\Components\TextInput::make('agency')
                                                 ->label('Agência')
                                                 ->required()
                                                 ->maxLength(20)
                                                 ->placeholder('0000-0'),
-
                                             Forms\Components\TextInput::make('account')
                                                 ->label('Conta')
                                                 ->required()
                                                 ->maxLength(20)
                                                 ->placeholder('00000-0'),
-                                        ])
+                                        ]),
                                 ])
-                                ->itemLabel(
-                                    fn(array $state): ?string =>
+                                ->itemLabel(fn(array $state): ?string =>
                                     $state['bank_name']
                                         ? "{$state['bank_name']} - Ag: {$state['agency']}"
                                         : 'Nova conta bancária'
                                 )
                                 ->addActionLabel('Adicionar conta bancária')
-                                ->deleteAction(
-                                    fn($action) => $action->requiresConfirmation()
-                                )
+                                ->deleteAction(fn($action) => $action->requiresConfirmation())
                                 ->reorderable()
                                 ->collapsible()
                                 ->visible(fn(callable $get) => $get('has_bank_accounts') === true),
                         ]),
 
-                    Step::make('Dados da Esposa')
+                    Step::make('Cônjuge')
                         ->icon('heroicon-m-user-plus')
-                        ->description('Informações da esposa (se aplicável)')
+                        ->description('Informações do cônjuge (se aplicável)')
                         ->schema([
                             Forms\Components\Toggle::make('has_spouse')
-                                ->label('Cliente possui esposa?')
+                                ->label('Cliente possui cônjuge?')
                                 ->live()
                                 ->dehydrated(false)
-                                ->afterStateHydrated(function ($component, $state, $record) {
+                                ->afterStateHydrated(function ($component, $record) {
                                     $component->state($record?->spouse()->exists() ?? false);
                                 })
                                 ->afterStateUpdated(function ($state, $set) {
@@ -314,11 +302,10 @@ class ClientResource extends Resource
                                         $set('spouse.note', null);
                                     }
                                 }),
-
                             Forms\Components\Group::make()
                                 ->relationship('spouse')
                                 ->schema([
-                                    Forms\Components\Section::make('Dados Pessoais da esposa')
+                                    Forms\Components\Section::make('Dados Pessoais')
                                         ->schema([
                                             Forms\Components\TextInput::make('name')
                                                 ->label('Nome completo')
@@ -350,13 +337,12 @@ class ClientResource extends Resource
                                                 ->maxLength(255),
                                         ])
                                         ->columns(2),
-
                                     Forms\Components\Section::make('Documentos')
                                         ->schema([
                                             Forms\Components\TextInput::make('cpf')
                                                 ->label('CPF')
                                                 ->mask('999.999.999-99')
-                                                ->maxlength(14)
+                                                ->maxLength(14)
                                                 ->rule('cpf')
                                                 ->unique(ClientSpouse::class, 'cpf', ignoreRecord: true)
                                                 ->validationMessages([
@@ -366,21 +352,20 @@ class ClientResource extends Resource
                                             Forms\Components\TextInput::make('rg')
                                                 ->label('RG')
                                                 ->mask('99.999.999-9')
-                                                ->maxlength(12),
+                                                ->maxLength(12),
                                             Forms\Components\TextInput::make('pis')
                                                 ->label('PIS')
                                                 ->mask('999.99999.99-9')
                                                 ->rule('pis')
-                                                ->maxlength(14)
+                                                ->maxLength(14)
                                                 ->validationMessages([
                                                     'pis' => 'Número de PIS inválido.',
                                                 ]),
                                             Forms\Components\TextInput::make('ctps')
                                                 ->label('CTPS')
-                                                ->maxlength(20),
+                                                ->maxLength(20),
                                         ])
                                         ->columns(2),
-
                                     Forms\Components\Section::make('Contatos')
                                         ->schema([
                                             Forms\Components\TextInput::make('email')
@@ -397,22 +382,23 @@ class ClientResource extends Resource
                                                 ->maxLength(14),
                                             Forms\Components\Textarea::make('note')
                                                 ->label('Observações')
-                                                ->rows(3),
+                                                ->rows(3)
+                                                ->columnSpanFull(),
                                         ])
                                         ->columns(2),
                                 ])
                                 ->visible(fn(callable $get) => $get('has_spouse') === true),
                         ]),
 
-                    Step::make('Filhos/Tutelados/Curatelados')
+                    Step::make('Dependentes')
                         ->icon('heroicon-m-user-group')
-                        ->description('Dependentes do cliente (se aplicável)')
+                        ->description('Filhos, tutelados e curatelados (se aplicável)')
                         ->schema([
                             Forms\Components\Toggle::make('has_wards')
                                 ->label('Cliente possui dependentes?')
                                 ->live()
                                 ->dehydrated(false)
-                                ->afterStateHydrated(function ($component, $state, $record) {
+                                ->afterStateHydrated(function ($component, $record) {
                                     $component->state($record?->wards()->exists() ?? false);
                                 })
                                 ->afterStateUpdated(function ($state, $set) {
@@ -420,7 +406,6 @@ class ClientResource extends Resource
                                         $set('wards', []);
                                     }
                                 }),
-
                             Forms\Components\Repeater::make('wards')
                                 ->relationship('wards')
                                 ->schema([
@@ -431,71 +416,77 @@ class ClientResource extends Resource
                                                 ->required()
                                                 ->maxLength(255)
                                                 ->columnSpan(2),
-
                                             Forms\Components\TextInput::make('cpf')
                                                 ->label('CPF')
                                                 ->mask('999.999.999-99')
-                                                ->maxlength(14)
+                                                ->maxLength(14)
                                                 ->rule('cpf')
                                                 ->unique('client_wards', 'cpf', ignoreRecord: true)
                                                 ->validationMessages([
                                                     'cpf' => 'Número de CPF inválido.',
                                                     'unique' => 'Este CPF já foi registrado.',
                                                 ]),
-
                                             Forms\Components\TextInput::make('rg')
                                                 ->label('RG')
                                                 ->mask('99.999.999-9')
-                                                ->maxlength(12),
-
+                                                ->maxLength(12),
                                             Forms\Components\DatePicker::make('date_of_birth')
                                                 ->label('Data de nascimento')
                                                 ->columnSpan(2),
-
                                             Forms\Components\Textarea::make('note')
                                                 ->label('Observações')
                                                 ->rows(2)
                                                 ->columnSpan(2),
-                                        ])
+                                        ]),
                                 ])
                                 ->itemLabel(fn(array $state): ?string => $state['name'] ?? 'Novo dependente')
                                 ->addActionLabel('Adicionar dependente')
-                                ->deleteAction(
-                                    fn($action) => $action->requiresConfirmation()
-                                )
+                                ->deleteAction(fn($action) => $action->requiresConfirmation())
                                 ->reorderable()
                                 ->collapsible()
                                 ->visible(fn(callable $get) => $get('has_wards') === true),
                         ]),
                 ])
-                    ->skippable() // Esta linha permite navegação livre entre steps
+                    ->skippable()
                     ->columnSpan('full'),
-
             ]);
     }
 
-    public static function table(Tables\Table $table): Tables\Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable()
-                    ->label('Nome'),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Nome')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('client_documents.cpf')
                     ->label('CPF'),
                 Tables\Columns\TextColumn::make('client_contacts.email')
                     ->label('E-mail'),
-                Tables\Columns\TextColumn::make('contacts.cellphone')
+                Tables\Columns\TextColumn::make('client_contacts.cellphone')
                     ->label('Celular'),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScope(SoftDeletingScope::class);
     }
 
     public static function getPages(): array

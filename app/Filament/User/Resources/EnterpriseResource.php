@@ -5,19 +5,16 @@ namespace App\Filament\User\Resources;
 use App\Filament\User\Resources\EnterpriseResource\Pages;
 use App\Models\Enterprise;
 use App\Models\EnterpriseDocument;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Wizard\Step;
 use Leandrocfe\FilamentPtbrFormFields\Cep;
-use Filament\Forms\Components\TextInput;
-use Filament\Resources\RelationManagers\RelationGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
 
 class EnterpriseResource extends Resource
 {
@@ -37,29 +34,28 @@ class EnterpriseResource extends Resource
                         ->icon('heroicon-m-building-office')
                         ->schema([
                             Forms\Components\TextInput::make('corporate_reason')
-                                ->required()
                                 ->label('Razão Social')
+                                ->required()
                                 ->maxLength(255),
                             Forms\Components\TextInput::make('trade_name')
                                 ->label('Nome Fantasia')
                                 ->maxLength(255),
                             Forms\Components\Textarea::make('note')
                                 ->label('Observações')
-                                ->columnSpan(2),
-
+                                ->rows(3)
+                                ->columnSpanFull(),
                         ])
                         ->columns(2),
 
                     Step::make('Documentos')
-                    ->icon('heroicon-m-document-text')
-
+                        ->icon('heroicon-m-document-text')
                         ->schema([
                             Forms\Components\Group::make()
-                                ->relationship('documents')
+                                ->relationship('enterprise_documents')
                                 ->schema([
                                     Forms\Components\TextInput::make('cnpj')
-                                        ->required()
                                         ->label('CNPJ')
+                                        ->required()
                                         ->mask('99.999.999/9999-99')
                                         ->rule('cnpj')
                                         ->maxLength(18)
@@ -77,12 +73,52 @@ class EnterpriseResource extends Resource
                                         ->maxLength(18),
                                     Forms\Components\Textarea::make('other_documents')
                                         ->label('Outros Documentos')
-                                        ->maxLength(65535)
-                                        ->rows(3),
+                                        ->rows(3)
+                                        ->columnSpanFull(),
                                 ])
                                 ->columns(2),
-                        ])
+                        ]),
 
+                    Step::make('Representantes')
+                        ->icon('heroicon-m-user-group')
+                        ->description('Representantes legais da empresa')
+                        ->schema([
+                            Forms\Components\Repeater::make('enterprise_representatives')
+                                ->relationship('enterprise_representatives')
+                                ->schema([
+                                    Forms\Components\Grid::make(2)
+                                        ->schema([
+                                            Forms\Components\TextInput::make('name')
+                                                ->label('Nome completo')
+                                                ->required()
+                                                ->maxLength(255)
+                                                ->columnSpan(2),
+                                            Forms\Components\Select::make('gender')
+                                                ->label('Gênero')
+                                                ->options([
+                                                    'male' => 'Masculino',
+                                                    'female' => 'Feminino',
+                                                    'other' => 'Outro',
+                                                ]),
+                                            Forms\Components\TextInput::make('position')
+                                                ->label('Cargo/Função')
+                                                ->maxLength(255),
+                                            Forms\Components\Textarea::make('note')
+                                                ->label('Observações')
+                                                ->rows(2)
+                                                ->columnSpan(2),
+                                        ]),
+                                ])
+                                ->itemLabel(fn(array $state): ?string =>
+                                    $state['name']
+                                        ? "{$state['name']}" . ($state['position'] ? " — {$state['position']}" : '')
+                                        : 'Novo representante'
+                                )
+                                ->addActionLabel('Adicionar representante')
+                                ->deleteAction(fn($action) => $action->requiresConfirmation())
+                                ->reorderable()
+                                ->collapsible(),
+                        ]),
                 ])
                     ->skippable()
                     ->columnSpan('full'),
@@ -93,7 +129,7 @@ class EnterpriseResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('documents.cnpj')
+                Tables\Columns\TextColumn::make('enterprise_documents.cnpj')
                     ->label('CNPJ')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('corporate_reason')
@@ -114,7 +150,7 @@ class EnterpriseResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -123,11 +159,17 @@ class EnterpriseResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
 
-
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScope(SoftDeletingScope::class);
+    }
 
     public static function getPages(): array
     {

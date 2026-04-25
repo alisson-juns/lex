@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\OccupationResource\Pages;
-use App\Filament\Resources\OccupationResource\RelationManagers;
 use App\Models\Occupation;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,25 +15,26 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class OccupationResource extends Resource
 {
     protected static ?string $model = Occupation::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
+    protected static ?string $navigationIcon = 'heroicon-o-briefcase';
     protected static ?string $navigationGroup = 'Controle de Funcionários';
-
     protected static ?int $navigationSort = 1;
-
     protected static ?string $navigationLabel = 'Cargos';
+    protected static ?string $modelLabel = 'Cargo';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('title')
+                    ->label('Cargo')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
+                    ->label('Descrição')
                     ->columnSpanFull(),
                 Forms\Components\Toggle::make('active')
+                    ->label('Ativo')
+                    ->default(true)
                     ->required(),
             ]);
     }
@@ -44,24 +44,24 @@ class OccupationResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('title')
+                    ->label('Cargo')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('active')
+                    ->label('Ativo')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Criado em')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->dateTime()
+                    ->label('Atualizado em')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -70,15 +70,16 @@ class OccupationResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
 
-    public static function getRelations(): array
+    public static function getEloquentQuery(): Builder
     {
-        return [
-            //
-        ];
+        return parent::getEloquentQuery()
+            ->withoutGlobalScope(SoftDeletingScope::class);
     }
 
     public static function getPages(): array

@@ -2,20 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Occupation;
-use App\Models\Lawyer;
-use App\Models\EmployeeContact;
-use App\Models\EmployeeDocument;
-use App\Models\EmployeeAddress;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Employee extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -28,40 +22,31 @@ class Employee extends Model
         'marital_status',
         'occupation_id',
         'note',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'active' => 'boolean'
+        'active'        => 'boolean',
     ];
 
-    // Relacionamentos
     public function occupation(): BelongsTo
     {
         return $this->belongsTo(Occupation::class);
     }
 
-    public function lawyer(): HasOne
-    {
-        return $this->hasOne(Lawyer::class);
-    }
-
-    public function contact(): HasOne
-    {
-        return $this->hasOne(EmployeeContact::class);
-    }
-
-    public function documents(): HasOne
-    {
-        return $this->hasOne(EmployeeDocument::class);
-    }
-
-    public function address(): HasOne
+    public function employee_addresses(): HasOne
     {
         return $this->hasOne(EmployeeAddress::class);
     }
 
-   
+    public function employee_contacts(): HasOne
+    {
+        return $this->hasOne(EmployeeContact::class);
+    }
 
+    public function employee_documents(): HasOne
+    {
+        return $this->hasOne(EmployeeDocument::class);
+    }
 }

@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class EmployeeDocument extends Model
+class LawyerDocument extends Model
 {
-    protected $table = 'employee_documents';
+    protected $table = 'lawyer_documents';
 
     protected $fillable = [
-        'employee_id',
+        'lawyer_id',
         'cpf',
         'rg',
         'cnh',
@@ -20,8 +20,8 @@ class EmployeeDocument extends Model
         'other_documents',
     ];
 
-    public function employee(): BelongsTo
+    public function lawyer(): BelongsTo
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Lawyer::class);
     }
 }
