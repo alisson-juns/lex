@@ -12,7 +12,6 @@ use Filament\Tables\Table;
 
 class UserResource extends Resource
 {
-    protected static ?string $model = User::class;
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $modelLabel = 'Usuário';
     protected static ?string $navigationLabel = 'Usuários';
@@ -37,9 +36,18 @@ class UserResource extends Resource
                     ->dehydrated(fn($state) => filled($state))
                     ->required(fn(string $operation): bool => $operation === 'create')
                     ->maxLength(255),
-                Forms\Components\Toggle::make('is_admin')
-                    ->label('Administrador')
-                    ->required(),
+                Forms\Components\Select::make('roles')
+                    ->label('Perfil de acesso')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
+                Forms\Components\Select::make('roles')
+                    ->label('Perfil de acesso')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
                 Forms\Components\DateTimePicker::make('email_verified_at')
                     ->label('E-mail verificado em'),
             ]);
@@ -55,9 +63,6 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')
                     ->label('E-mail')
                     ->searchable(),
-                Tables\Columns\IconColumn::make('is_admin')
-                    ->label('Administrador')
-                    ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado em')
                     ->dateTime('d/m/Y H:i')

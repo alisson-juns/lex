@@ -25,7 +25,7 @@ class UserPanelProvider extends PanelProvider
     {
         return $panel
             ->id('user')
-            ->path('user')
+            ->path('')
             ->login()
             ->defaultThemeMode(ThemeMode::Dark)
             ->colors([
@@ -58,7 +58,6 @@ class UserPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                \App\Http\Middleware\RedirectToProperPanelMiddleware::class,
                 Authenticate::class,
             ]);
             //->topNavigation();

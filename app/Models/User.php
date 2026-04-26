@@ -8,11 +8,14 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Spatie\Permission\Traits\HasRoles;
+
 
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasRoles;
     use HasFactory, Notifiable;
 
     /**
@@ -24,7 +27,6 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
-        'is_admin',
     ];
 
     /**
@@ -50,12 +52,14 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-     public function canAccessPanel(Panel $panel): bool
+         public function canAccessPanel(Panel $panel): bool
     {
-        return match ($panel->getId()) {
-            'admin'  => $this->is_admin,   // só admins
-            'user'   => true,              // usuários comuns
-            default  => false,             // nega outros painéis
-        };
+        return $this->hasAnyRole([
+            'super_admin',
+            'admin',
+            'advogado',
+            'estagiario',
+            'recepcionista',
+        ]);
     }
 }

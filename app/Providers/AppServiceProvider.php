@@ -3,20 +3,23 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Http\Responses\LoginResponse;
-use App\Http\Responses\LogoutResponse;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Validation\ValidationException;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public $singletons = [
-        \Filament\Http\Responses\Auth\Contracts\LoginResponse::class => \App\Http\Responses\LoginResponse::class,
-        \Filament\Http\Responses\Auth\Contracts\LogoutResponse::class => \App\Http\Responses\LogoutResponse::class, 
-    ];
- 
-    // ...
+    // remova o bloco public $singletons inteiro
+    
+    public function register(): void
+    {
+        //
+    }
+
+    public function boot(): void
+    {
+        //
+    }
 }
 
 Page::$reportValidationErrorUsing = function (ValidationException $exception) {

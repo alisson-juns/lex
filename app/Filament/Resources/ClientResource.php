@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\User\Resources;
+namespace App\Filament\Resources;
 
-use App\Filament\User\Resources\ClientResource\Pages;
+use App\Filament\Resources\ClientResource\Pages;
 use App\Models\Client;
 use App\Models\ClientSpouse;
 use App\Models\ClientWard;
