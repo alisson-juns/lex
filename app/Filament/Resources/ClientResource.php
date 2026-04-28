@@ -32,6 +32,13 @@ class ClientResource extends Resource
     protected static ?string $navigationLabel = 'Pessoa Física';
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\ClientResource\RelationManagers\LegalCasesRelationManager::class,
+        ];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

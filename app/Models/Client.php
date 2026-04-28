@@ -55,7 +55,7 @@ class Client extends Model
         return $this->hasMany(ClientWard::class);
     }
 
-    public function legal_cases(): HasMany
+    public function legalCases(): HasMany
     {
         return $this->hasMany(LegalCase::class);
     }
