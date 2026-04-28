@@ -6,6 +6,11 @@ use App\Filament\Resources\ClientResource\Pages;
 use App\Models\Client;
 use App\Models\ClientSpouse;
 use App\Models\ClientWard;
+use App\Enums\CaseStatus;
+use App\Models\CourtName;
+use App\Models\CourtNumber;
+use App\Models\Forum;
+use App\Models\Lawyer;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
@@ -21,6 +26,7 @@ class ClientResource extends Resource
 {
     protected static ?string $model = Client::class;
     protected static ?string $modelLabel = 'Cliente';
+    protected static ?string $pluralModelLabel = 'Clientes';
     protected static ?string $navigationGroup = 'Controle de Clientes';
     protected static ?int $navigationSort = 1;
     protected static ?string $navigationLabel = 'Pessoa Física';
@@ -471,9 +477,69 @@ class ClientResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-            ])
+            Tables\Actions\Action::make('create_case')
+                ->label('Inserir Processo')
+                ->icon('heroicon-o-scale')
+                ->color('gray')
+                ->modalHeading(fn (Client $record) => "Novo processo — {$record->name}")
+                ->modalWidth('3xl')
+                ->form([
+                    Forms\Components\TextInput::make('folder_number')
+                        ->label('Nº da Pasta')
+                        ->maxLength(255),
+
+                    Forms\Components\TextInput::make('case_number')
+                        ->label('Nº do Processo')
+                        ->maxLength(255),
+                    Forms\Components\Grid::make(3)
+                ->schema([
+                    Forms\Components\Select::make('court_number_id')
+                        ->label('Nº da Vara')
+                        ->options(CourtNumber::orderBy('id')->pluck('number', 'id'))
+                        ->searchable(),
+
+                    Forms\Components\Select::make('court_name_id')
+                        ->label('Nome da Vara')
+                        ->options(CourtName::orderBy('id')->pluck('name', 'id'))
+                        ->searchable(),
+
+                    Forms\Components\Select::make('forum_id')
+                        ->label('Fórum')
+                        ->options(Forum::orderBy('id')->pluck('name', 'id'))
+                        ->searchable(),
+                ]),
+                    Forms\Components\Select::make('lawyer_id')
+                        ->label('Advogado')
+                        ->options(\App\Models\Lawyer::orderBy('name')->pluck('name', 'id'))
+                        ->searchable(),
+
+                    Forms\Components\TextInput::make('opponent_name')
+                        ->label('Adverso')
+                        ->maxLength(255),
+
+                    Forms\Components\Select::make('status')
+                        ->label('Status')
+                        ->options(
+                            collect(\App\Enums\CaseStatus::cases())
+                                ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
+                        )
+                        ->default('open')
+                        ->required(),
+
+                    Forms\Components\Textarea::make('note')
+                        ->label('Observações')
+                        ->rows(3),
+                ])
+                ->action(function (Client $record, array $data) {
+                    $record->legal_cases()->create($data + [
+                        'registered_by' => auth()->id(),
+                    ]);
+                })
+                ->successNotificationTitle('Processo inserido com sucesso'),
+
+            Tables\Actions\ViewAction::make(),
+            Tables\Actions\EditAction::make(),
+        ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
