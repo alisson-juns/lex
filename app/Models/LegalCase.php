@@ -6,6 +6,7 @@ use App\Enums\CaseStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LegalCase extends Model
 {
@@ -35,6 +36,11 @@ class LegalCase extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function enterprise(): BelongsTo
+    {
+        return $this->belongsTo(Enterprise::class);
+    }
+
     public function forum(): BelongsTo
     {
         return $this->belongsTo(Forum::class);
@@ -58,11 +64,6 @@ class LegalCase extends Model
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by');
-    }
-
-    public function enterprise(): BelongsTo
-    {
-        return $this->belongsTo(Enterprise::class);
     }
 
     public function hearings(): HasMany

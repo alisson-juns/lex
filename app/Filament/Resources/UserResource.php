@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 
 class UserResource extends Resource
 {
+    protected static ?string $model = User::class;
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $modelLabel = 'Usuário';
     protected static ?string $navigationLabel = 'Usuários';
@@ -32,16 +33,10 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('password')
                     ->label('Senha')
                     ->password()
-                    ->dehydrateStateUsing(fn($state) => filled($state) ? bcrypt($state) : null)
-                    ->dehydrated(fn($state) => filled($state))
-                    ->required(fn(string $operation): bool => $operation === 'create')
+                    ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)
+                    ->dehydrated(fn ($state) => filled($state))
+                    ->required(fn (string $operation): bool => $operation === 'create')
                     ->maxLength(255),
-                Forms\Components\Select::make('roles')
-                    ->label('Perfil de acesso')
-                    ->relationship('roles', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->searchable(),
                 Forms\Components\Select::make('roles')
                     ->label('Perfil de acesso')
                     ->relationship('roles', 'name')
@@ -89,10 +84,10 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUsers::route('/'),
+            'index'  => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
-            'view' => Pages\ViewUser::route('/{record}'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
+            'view'   => Pages\ViewUser::route('/{record}'),
+            'edit'   => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 }

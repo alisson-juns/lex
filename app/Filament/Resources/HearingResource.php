@@ -41,8 +41,7 @@ class HearingResource extends Resource
                     Forms\Components\Select::make('lawyer_id')
                         ->label('Advogado')
                         ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
-                        ->searchable()
-                        ->preload(),
+                        ->searchable(),
                 ]),
 
             Forms\Components\Section::make('Audiência')
@@ -119,10 +118,10 @@ class HearingResource extends Resource
                     ->label('Status')
                     ->formatStateUsing(fn (HearingStatus $state) => $state->label())
                     ->colors([
-                        'success' => HearingStatus::Scheduled->value,
-                        'primary' => HearingStatus::Completed->value,
-                        'danger'  => HearingStatus::Cancelled->value,
-                        'warning' => HearingStatus::Postponed->value,
+                        'success'   => HearingStatus::Scheduled->value,
+                        'primary'   => HearingStatus::Completed->value,
+                        'danger'    => HearingStatus::Cancelled->value,
+                        'warning'   => HearingStatus::Postponed->value,
                         'secondary' => HearingStatus::Suspended->value,
                     ]),
 
@@ -140,11 +139,6 @@ class HearingResource extends Resource
                         collect(HearingStatus::cases())
                             ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
                     ),
-
-                Tables\Filters\SelectFilter::make('lawyer_id')
-                    ->label('Advogado')
-                    ->options(Lawyer::orderBy('name')->pluck('name', 'id')),
-
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
@@ -160,9 +154,10 @@ class HearingResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
+    public static function getEloquentQuery(): Builder
     {
-        return [];
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
     public static function getPages(): array
@@ -173,11 +168,5 @@ class HearingResource extends Resource
             'view'   => Pages\ViewHearing::route('/{record}'),
             'edit'   => Pages\EditHearing::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 }
