@@ -64,4 +64,9 @@ class LegalCase extends Model
     {
         return $this->belongsTo(Enterprise::class);
     }
+
+    public function hearings(): HasMany
+    {
+        return $this->hasMany(Hearing::class);
+    }
 }

@@ -23,6 +23,8 @@ class LegalCaseResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-scale';
     protected static ?string $navigationLabel = 'Processos';
     protected static ?string $modelLabel = 'Processo';
+    protected static ?string $navigationGroup = 'Controle de Processos';
+    protected static ?int $navigationSort = 1;
     protected static ?string $pluralModelLabel = 'Processos';
 
     public static function form(Form $form): Form
