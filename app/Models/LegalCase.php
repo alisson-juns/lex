@@ -15,6 +15,7 @@ class LegalCase extends Model
         'folder_number',
         'case_number',
         'client_id',
+        'enterprise_id',
         'forum_id',
         'court_name_id',
         'court_number_id',
@@ -57,5 +58,10 @@ class LegalCase extends Model
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by');
+    }
+
+    public function enterprise(): BelongsTo
+    {
+        return $this->belongsTo(Enterprise::class);
     }
 }

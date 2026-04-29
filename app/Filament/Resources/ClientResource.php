@@ -484,69 +484,78 @@ class ClientResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-            Tables\Actions\Action::make('create_case')
-                ->label('Inserir Processo')
-                ->icon('heroicon-o-scale')
-                ->color('gray')
-                ->modalHeading(fn (Client $record) => "Novo processo — {$record->name}")
-                ->modalWidth('3xl')
-                ->form([
-                    Forms\Components\TextInput::make('folder_number')
-                        ->label('Nº da Pasta')
-                        ->maxLength(255),
+                Tables\Actions\Action::make('create_case')
+                    ->label('Inserir Processo')
+                    ->icon('heroicon-o-scale')
+                    ->color('gray')
+                    ->modalHeading(fn (Client $record) => "Novo processo — {$record->name}")
+                    ->modalWidth('3xl')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('folder_number')
+                                    ->label('Nº da Pasta')
+                                    ->maxLength(255),
 
-                    Forms\Components\TextInput::make('case_number')
-                        ->label('Nº do Processo')
-                        ->maxLength(255),
-                    Forms\Components\Grid::make(3)
-                ->schema([
-                    Forms\Components\Select::make('court_number_id')
-                        ->label('Nº da Vara')
-                        ->options(CourtNumber::orderBy('id')->pluck('number', 'id'))
-                        ->searchable(),
+                                Forms\Components\TextInput::make('case_number')
+                                    ->label('Nº do Processo')
+                                    ->maxLength(255),
+                            ]),
 
-                    Forms\Components\Select::make('court_name_id')
-                        ->label('Nome da Vara')
-                        ->options(CourtName::orderBy('id')->pluck('name', 'id'))
-                        ->searchable(),
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\Select::make('court_number_id')
+                                    ->label('Nº da Vara')
+                                    ->options(CourtNumber::orderBy('id')->pluck('number', 'id'))
+                                    ->searchable(),
 
-                    Forms\Components\Select::make('forum_id')
-                        ->label('Fórum')
-                        ->options(Forum::orderBy('id')->pluck('name', 'id'))
-                        ->searchable(),
-                ]),
-                    Forms\Components\Select::make('lawyer_id')
-                        ->label('Advogado')
-                        ->options(\App\Models\Lawyer::orderBy('name')->pluck('name', 'id'))
-                        ->searchable(),
+                                Forms\Components\Select::make('court_name_id')
+                                    ->label('Nome da Vara')
+                                    ->options(CourtName::orderBy('id')->pluck('name', 'id'))
+                                    ->searchable(),
 
-                    Forms\Components\TextInput::make('opponent_name')
-                        ->label('Adverso')
-                        ->maxLength(255),
+                                Forms\Components\Select::make('forum_id')
+                                    ->label('Fórum')
+                                    ->options(Forum::orderBy('id')->pluck('name', 'id'))
+                                    ->searchable(),
+                            ]),
 
-                    Forms\Components\Select::make('status')
-                        ->label('Status')
-                        ->options(
-                            collect(\App\Enums\CaseStatus::cases())
-                                ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
-                        )
-                        ->default('open')
-                        ->required(),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('lawyer_id')
+                                    ->label('Advogado')
+                                    ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
+                                    ->searchable(),
 
-                    Forms\Components\Textarea::make('note')
-                        ->label('Observações')
-                        ->rows(3),
-                ])
-                ->action(function (Client $record, array $data) {
-                    $record->legal_cases()->create($data + [
-                        'registered_by' => auth()->id(),
-                    ]);
-                })
-                ->successNotificationTitle('Processo inserido com sucesso'),
+                                Forms\Components\TextInput::make('opponent_name')
+                                    ->label('Adverso')
+                                    ->maxLength(255),
 
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-        ])
+                                Forms\Components\Select::make('status')
+                                    ->label('Status')
+                                    ->options(
+                                        collect(CaseStatus::cases())
+                                            ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
+                                    )
+                                    ->default('open')
+                                    ->required(),
+
+                                Forms\Components\Textarea::make('note')
+                                    ->label('Observações')
+                                    ->rows(3),
+                            ]),
+                    ])
+                    ->action(function (Client $record, array $data) {
+                        $record->legalCases()->create([
+                            ...$data,
+                            'registered_by' => auth()->id(),
+                        ]);
+                    })
+                    ->successNotificationTitle('Processo inserido com sucesso'),
+
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

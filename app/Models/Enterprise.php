@@ -26,4 +26,9 @@ class Enterprise extends Model
     {
         return $this->hasMany(EnterpriseRepresentative::class);
     }
+
+    public function legalCases(): HasMany
+    {
+        return $this->hasMany(LegalCase::class);
+    }
 }

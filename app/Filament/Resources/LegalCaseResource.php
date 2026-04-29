@@ -65,31 +65,64 @@ class LegalCaseResource extends Resource
                 ]),
 
             Forms\Components\Section::make('Partes')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\Select::make('client_id')
-                        ->label('Cliente')
-                        ->relationship('client', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->required(),
+        ->columns(2)
+        ->schema([
+            Forms\Components\Radio::make('party_type')
+                ->label('Tipo de parte')
+                ->options([
+                    'client'     => 'Pessoa Física',
+                    'enterprise' => 'Pessoa Jurídica',
+                ])
+                ->default('client')
+                ->live()
+                ->dehydrated(false)
+                ->afterStateHydrated(function ($component, $record) {
+                    if ($record?->enterprise_id) {
+                        $component->state('enterprise');
+                    } else {
+                        $component->state('client');
+                    }
+                })
+                ->afterStateUpdated(function (Forms\Set $set) {
+                    $set('client_id', null);
+                    $set('enterprise_id', null);
+                })
+                ->columnSpanFull(),
 
-                    Forms\Components\TextInput::make('opponent_name')
-                        ->label('Adverso')
-                        ->maxLength(255),
+            Forms\Components\Select::make('client_id')
+                ->label('Cliente')
+                ->relationship('client', 'name')
+                ->searchable()
+                ->preload()
+                ->visible(fn (Forms\Get $get) => $get('party_type') === 'client')
+                ->required(fn (Forms\Get $get) => $get('party_type') === 'client')
+                ->columnSpanFull(),
 
-                    Forms\Components\Select::make('lawyer_id')
-                        ->label('Advogado')
-                        ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
-                        ->searchable()
-                        ->preload(),
+            Forms\Components\Select::make('enterprise_id')
+                ->label('Empresa')
+                ->relationship('enterprise', 'corporate_reason')
+                ->searchable()
+                ->preload()
+                ->visible(fn (Forms\Get $get) => $get('party_type') === 'enterprise')
+                ->required(fn (Forms\Get $get) => $get('party_type') === 'enterprise')
+                ->columnSpanFull(),
 
-                    Forms\Components\Select::make('registered_by')
-                        ->label('Cadastrado por')
-                        ->relationship('registeredBy', 'name')
-                        ->searchable()
-                        ->preload(),
-                ]),
+            Forms\Components\TextInput::make('opponent_name')
+                ->label('Adverso')
+                ->maxLength(255),
+
+            Forms\Components\Select::make('lawyer_id')
+                ->label('Advogado')
+                ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
+                ->searchable()
+                ->preload(),
+
+            Forms\Components\Select::make('registered_by')
+                ->label('Cadastrado por')
+                ->relationship('registeredBy', 'name')
+                ->searchable()
+                ->preload(),
+        ]),
 
             Forms\Components\Section::make('Situação')
                 ->columns(2)
@@ -126,9 +159,14 @@ class LegalCaseResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('client.name')
-                    ->label('Cliente')
-                    ->searchable()
-                    ->sortable(),
+                    ->label('Parte')
+                    ->getStateUsing(fn (LegalCase $record): string => 
+                        $record->client?->name ?? $record->enterprise?->corporate_reason ?? '—'
+                    )
+                    ->searchable(query: function (Builder $query, string $search) {
+                        $query->whereHas('client', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                              ->orWhereHas('enterprise', fn ($q) => $q->where('corporate_reason', 'like', "%{$search}%"));
+                    }),
 
                 Tables\Columns\TextColumn::make('lawyer.name')
                     ->label('Advogado')
