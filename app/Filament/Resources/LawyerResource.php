@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\LawyerResource\Pages;
 use App\Models\Lawyer;
+use App\Models\User;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
@@ -23,12 +24,14 @@ class LawyerResource extends Resource
     protected static ?int $navigationSort = 1;
     protected static ?string $navigationLabel = 'Advogados';
     protected static ?string $modelLabel = 'Advogado';
+    protected static ?string $pluralModelLabel = 'Advogados';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Wizard::make([
+
                     Step::make('Dados Pessoais')
                         ->icon('heroicon-m-user')
                         ->description('Informações principais do advogado')
@@ -37,40 +40,50 @@ class LawyerResource extends Resource
                                 ->label('Nome')
                                 ->required()
                                 ->maxLength(255),
+
                             Forms\Components\DatePicker::make('date_of_birth')
-                                ->label('Data de nascimento'),
+                                ->label('Data de nascimento')
+                                ->displayFormat('d/m/Y'),
+
                             Forms\Components\Select::make('gender')
                                 ->label('Gênero')
                                 ->options([
-                                    'male' => 'Masculino',
+                                    'male'   => 'Masculino',
                                     'female' => 'Feminino',
-                                    'other' => 'Outro',
+                                    'other'  => 'Outro',
                                 ]),
+
                             Forms\Components\Select::make('marital_status')
                                 ->label('Estado civil')
                                 ->options([
-                                    'single' => 'Solteiro(a)',
-                                    'married' => 'Casado(a)',
+                                    'single'    => 'Solteiro(a)',
+                                    'married'   => 'Casado(a)',
                                     'separated' => 'Separado(a)',
-                                    'divorced' => 'Divorciado(a)',
-                                    'widowed' => 'Viúvo(a)',
+                                    'divorced'  => 'Divorciado(a)',
+                                    'widowed'   => 'Viúvo(a)',
                                 ]),
+
                             Forms\Components\TextInput::make('father')
                                 ->label('Pai')
                                 ->maxLength(255),
+
                             Forms\Components\TextInput::make('mother')
                                 ->label('Mãe')
                                 ->maxLength(255),
+
                             Forms\Components\TextInput::make('place_of_birth')
                                 ->label('Naturalidade')
                                 ->maxLength(255),
+
                             Forms\Components\TextInput::make('nationality')
                                 ->label('Nacionalidade')
                                 ->default('Brasileira')
                                 ->maxLength(255),
+
                             Forms\Components\Toggle::make('active')
                                 ->label('Ativo')
                                 ->default(true),
+
                             Forms\Components\Textarea::make('note')
                                 ->label('Observações')
                                 ->rows(3)
@@ -89,16 +102,20 @@ class LawyerResource extends Resource
                                 ->maxLength(255)
                                 ->validationMessages([
                                     'required' => 'O número da OAB é obrigatório.',
-                                    'unique' => 'Este número de OAB já está registrado.',
+                                    'unique'   => 'Este número de OAB já está registrado.',
                                 ]),
+
                             Forms\Components\TextInput::make('oab_state')
                                 ->label('Estado (OAB)')
                                 ->maxLength(2),
+
                             Forms\Components\TextInput::make('oab_subsection')
                                 ->label('Subseção')
                                 ->maxLength(255),
+
                             Forms\Components\DatePicker::make('oab_date')
-                                ->label('Data de inscrição'),
+                                ->label('Data de inscrição')
+                                ->displayFormat('d/m/Y'),
                         ])
                         ->columns(2),
 
@@ -118,13 +135,15 @@ class LawyerResource extends Resource
                                         ->unique('lawyer_documents', 'cpf', ignoreRecord: true)
                                         ->validationMessages([
                                             'required' => 'O campo CPF é obrigatório.',
-                                            'cpf' => 'Número de CPF inválido.',
-                                            'unique' => 'Este CPF já foi registrado.',
+                                            'cpf'      => 'Número de CPF inválido.',
+                                            'unique'   => 'Este CPF já foi registrado.',
                                         ]),
+
                                     Forms\Components\TextInput::make('rg')
                                         ->label('RG')
                                         ->mask('99.999.999-9')
                                         ->maxLength(12),
+
                                     Forms\Components\TextInput::make('cnh')
                                         ->label('CNH')
                                         ->mask('99999999999')
@@ -133,6 +152,7 @@ class LawyerResource extends Resource
                                         ->validationMessages([
                                             'cnh' => 'Número de CNH inválido.',
                                         ]),
+
                                     Forms\Components\TextInput::make('pis')
                                         ->label('PIS')
                                         ->mask('999.99999.99-9')
@@ -141,15 +161,18 @@ class LawyerResource extends Resource
                                         ->validationMessages([
                                             'pis' => 'Número de PIS inválido.',
                                         ]),
+
                                     Forms\Components\TextInput::make('ctps')
                                         ->label('CTPS')
-                                        ->maxLength(20),
+                                        ->maxLength(255),
+
                                     Forms\Components\TextInput::make('rnm')
                                         ->label('RNM')
-                                        ->maxLength(20),
+                                        ->maxLength(255),
+
                                     Forms\Components\Textarea::make('other_documents')
                                         ->label('Outros documentos')
-                                        ->rows(3)
+                                        ->rows(2)
                                         ->columnSpanFull(),
                                 ])
                                 ->columns(2),
@@ -168,30 +191,36 @@ class LawyerResource extends Resource
                                             mode: 'suffix',
                                             errorMessage: 'CEP inválido.',
                                             setFields: [
-                                                'street' => 'logradouro',
-                                                'number' => 'numero',
+                                                'street'     => 'logradouro',
+                                                'number'     => 'numero',
                                                 'complement' => 'complemento',
-                                                'district' => 'bairro',
-                                                'city' => 'localidade',
-                                                'state' => 'uf',
+                                                'district'   => 'bairro',
+                                                'city'       => 'localidade',
+                                                'state'      => 'uf',
                                             ]
                                         )
                                         ->live(onBlur: true),
+
                                     Forms\Components\TextInput::make('street')
                                         ->label('Endereço')
                                         ->maxLength(255),
+
                                     Forms\Components\TextInput::make('number')
                                         ->label('Número')
                                         ->maxLength(10),
+
                                     Forms\Components\TextInput::make('complement')
                                         ->label('Complemento')
                                         ->maxLength(50),
+
                                     Forms\Components\TextInput::make('district')
                                         ->label('Bairro')
                                         ->maxLength(100),
+
                                     Forms\Components\TextInput::make('city')
                                         ->label('Cidade')
                                         ->maxLength(100),
+
                                     Forms\Components\TextInput::make('state')
                                         ->label('Estado')
                                         ->maxLength(2),
@@ -210,36 +239,59 @@ class LawyerResource extends Resource
                                         ->label('E-mail')
                                         ->email()
                                         ->maxLength(255),
+
+                                    Forms\Components\TextInput::make('optional_email')
+                                        ->label('E-mail alternativo')
+                                        ->email()
+                                        ->maxLength(255),
+
                                     Forms\Components\TextInput::make('cellphone')
                                         ->label('Celular')
                                         ->mask('(99) 99999-9999')
-                                        ->maxLength(15),
+                                        ->maxLength(16),
+
                                     Forms\Components\TextInput::make('phone')
                                         ->label('Telefone')
                                         ->mask('(99) 9999-9999')
-                                        ->maxLength(14),
-                                    Forms\Components\TextInput::make('optional_email')
-                                        ->label('E-mail opcional')
-                                        ->email()
-                                        ->maxLength(255),
-                                    Forms\Components\TextInput::make('message_cell_phone')
-                                        ->label('Celular para mensagens')
-                                        ->mask('(99) 99999-9999')
                                         ->maxLength(15),
-                                    Forms\Components\TextInput::make('message_phone')
-                                        ->label('Telefone para mensagens')
-                                        ->mask('(99) 9999-9999')
-                                        ->maxLength(14),
+
+                                    Forms\Components\Toggle::make('message_cell_phone')
+                                        ->label('WhatsApp (celular)')
+                                        ->default(false),
+
+                                    Forms\Components\Toggle::make('message_phone')
+                                        ->label('WhatsApp (telefone)')
+                                        ->default(false),
+
                                     Forms\Components\Textarea::make('note')
                                         ->label('Observações')
-                                        ->rows(3)
+                                        ->rows(2)
                                         ->columnSpanFull(),
                                 ])
                                 ->columns(2),
                         ]),
+
+                    Step::make('Acesso ao Sistema')
+                        ->icon('heroicon-m-lock-closed')
+                        ->description('Vínculo com usuário do sistema (opcional)')
+                        ->schema([
+                            Forms\Components\Select::make('user_id')
+                                ->label('Usuário do sistema')
+                                ->options(
+                                    User::orderBy('name')
+                                        ->get()
+                                        ->mapWithKeys(fn (User $user) => [
+                                            $user->id => "{$user->name} ({$user->email})",
+                                        ])
+                                )
+                                ->searchable()
+                                ->nullable()
+                                ->helperText('Deixe em branco para advogados externos que não acessam o sistema.'),
+                        ]),
+
                 ])
-                    ->skippable()
-                    ->columnSpan('full'),
+                ->skippable()
+                ->columnSpanFull(),
             ]);
     }
 
@@ -251,32 +303,63 @@ class LawyerResource extends Resource
                     ->label('Nome')
                     ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('oab')
                     ->label('OAB')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('oab_state')
-                    ->label('Estado')
-                    ->sortable(),
+                    ->searchable()
+                    ->formatStateUsing(fn ($state, Lawyer $record) =>
+                        $state && $record->oab_state
+                            ? "{$state}/{$record->oab_state}"
+                            : ($state ?? '—')
+                    ),
+
+                Tables\Columns\TextColumn::make('lawyer_contacts.cellphone')
+                    ->label('Celular')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('lawyer_contacts.email')
+                    ->label('E-mail')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\IconColumn::make('user_id')
+                    ->label('Acesso')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->tooltip(fn (Lawyer $record) =>
+                        $record->user ? "Usuário: {$record->user->name}" : 'Sem acesso ao sistema'
+                    ),
+
                 Tables\Columns\IconColumn::make('active')
                     ->label('Ativo')
                     ->boolean(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado em')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Atualizado em')
-                    ->dateTime('d/m/Y H:i')
+                    ->dateTime('d/m/Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\TernaryFilter::make('active')
+                    ->label('Ativo')
+                    ->trueLabel('Apenas ativos')
+                    ->falseLabel('Apenas inativos'),
+
+                Tables\Filters\TernaryFilter::make('user_id')
+                    ->label('Acesso ao sistema')
+                    ->nullable()
+                    ->trueLabel('Com acesso')
+                    ->falseLabel('Sem acesso'),
+
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -296,10 +379,10 @@ class LawyerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListLawyers::route('/'),
+            'index'  => Pages\ListLawyers::route('/'),
             'create' => Pages\CreateLawyer::route('/create'),
-            'view' => Pages\ViewLawyer::route('/{record}'),
-            'edit' => Pages\EditLawyer::route('/{record}/edit'),
+            'view'   => Pages\ViewLawyer::route('/{record}'),
+            'edit'   => Pages\EditLawyer::route('/{record}/edit'),
         ];
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Enterprise;
 use App\Models\EnterpriseDocument;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
+use App\Models\Lawyer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -198,11 +199,11 @@ class EnterpriseResource extends Resource
 
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('lawyer_id')
-                                    ->label('Advogado')
-                                    ->options(\App\Models\Lawyer::orderBy('name')->pluck('name', 'id'))
+                                Forms\Components\Select::make('lawyers')
+                                    ->label('Advogado(s)')
+                                    ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
+                                    ->multiple()
                                     ->searchable(),
-
                                 Forms\Components\TextInput::make('opponent_name')
                                     ->label('Adverso')
                                     ->maxLength(255),
@@ -222,11 +223,18 @@ class EnterpriseResource extends Resource
                             ]),
                     ])
                     ->action(function (Enterprise $record, array $data) {
-                        $record->legalCases()->create([
-                            ...$data,
-                            'registered_by' => auth()->id(),
-                        ]);
-                    }),
+                    $lawyers = $data['lawyers'] ?? [];
+                    unset($data['lawyers']);
+                
+                    $legalCase = $record->legalCases()->create([
+                        ...$data,
+                        'registered_by' => auth()->id(),
+                    ]);
+                
+                    if (!empty($lawyers)) {
+                        $legalCase->lawyers()->attach($lawyers);
+                    }
+                }),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

@@ -5,8 +5,9 @@ namespace App\Models;
 use App\Enums\CaseStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class LegalCase extends Model
 {
@@ -20,7 +21,6 @@ class LegalCase extends Model
         'forum_id',
         'court_name_id',
         'court_number_id',
-        'lawyer_id',
         'registered_by',
         'opponent_name',
         'status',
@@ -56,14 +56,15 @@ class LegalCase extends Model
         return $this->belongsTo(CourtNumber::class);
     }
 
-    public function lawyer(): BelongsTo
-    {
-        return $this->belongsTo(Lawyer::class);
-    }
-
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by');
+    }
+
+    // Múltiplos advogados via pivot legal_case_lawyer
+    public function lawyers(): BelongsToMany
+    {
+        return $this->belongsToMany(Lawyer::class, 'legal_case_lawyer');
     }
 
     public function hearings(): HasMany

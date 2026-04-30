@@ -522,9 +522,10 @@ class ClientResource extends Resource
 
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('lawyer_id')
-                                    ->label('Advogado')
+                                Forms\Components\Select::make('lawyers')
+                                    ->label('Advogado(s)')
                                     ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
+                                    ->multiple()
                                     ->searchable(),
 
                                 Forms\Components\TextInput::make('opponent_name')
@@ -546,12 +547,19 @@ class ClientResource extends Resource
                             ]),
                     ])
                     ->action(function (Client $record, array $data) {
-                        $record->legalCases()->create([
-                            ...$data,
-                            'registered_by' => auth()->id(),
-                        ]);
-                    })
-                    ->successNotificationTitle('Processo inserido com sucesso'),
+                    $lawyers = $data['lawyers'] ?? [];
+                    unset($data['lawyers']);
+
+                    $legalCase = $record->legalCases()->create([
+                        ...$data,
+                        'registered_by' => auth()->id(),
+                    ]);
+
+                    if (!empty($lawyers)) {
+                        $legalCase->lawyers()->attach($lawyers);
+                    }
+            })
+            ->successNotificationTitle('Processo inserido com sucesso'),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

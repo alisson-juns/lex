@@ -5,12 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Lawyer extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
+        'user_id',
         'name',
         'oab',
         'oab_state',
@@ -32,6 +35,22 @@ class Lawyer extends Model
         'oab_date'      => 'date',
         'active'        => 'boolean',
     ];
+
+    // Usuário do sistema vinculado (nullable — advogados externos não têm login)
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function legalCases(): BelongsToMany
+    {
+        return $this->belongsToMany(LegalCase::class, 'legal_case_lawyer');
+    }
+
+    public function hearings(): HasOne
+    {
+        return $this->hasOne(Hearing::class);
+    }
 
     public function lawyer_addresses(): HasOne
     {

@@ -46,7 +46,6 @@ class LegalCaseResource extends Resource
             Forms\Components\Section::make('Localização')
                 ->columns(3)
                 ->schema([
-                    
                     Forms\Components\Select::make('court_number_id')
                         ->label('Número da Vara')
                         ->options(CourtNumber::orderBy('id')->pluck('number', 'id'))
@@ -61,70 +60,68 @@ class LegalCaseResource extends Resource
 
                     Forms\Components\Select::make('forum_id')
                         ->label('Fórum')
-                        ->options(Forum::orderBy('id')->pluck('name', 'id'))
+                        ->options(Forum::orderBy('name')->pluck('name', 'id'))
                         ->searchable()
                         ->preload(),
                 ]),
 
             Forms\Components\Section::make('Partes')
-        ->columns(2)
-        ->schema([
-            Forms\Components\Radio::make('party_type')
-                ->label('Tipo de parte')
-                ->options([
-                    'client'     => 'Pessoa Física',
-                    'enterprise' => 'Pessoa Jurídica',
-                ])
-                ->default('client')
-                ->live()
-                ->dehydrated(false)
-                ->afterStateHydrated(function ($component, $record) {
-                    if ($record?->enterprise_id) {
-                        $component->state('enterprise');
-                    } else {
-                        $component->state('client');
-                    }
-                })
-                ->afterStateUpdated(function (Forms\Set $set) {
-                    $set('client_id', null);
-                    $set('enterprise_id', null);
-                })
-                ->columnSpanFull(),
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Radio::make('party_type')
+                        ->label('Tipo de parte')
+                        ->options([
+                            'client'     => 'Pessoa Física',
+                            'enterprise' => 'Pessoa Jurídica',
+                        ])
+                        ->default('client')
+                        ->live()
+                        ->dehydrated(false)
+                        ->afterStateHydrated(function ($component, $record) {
+                            if ($record?->enterprise_id) {
+                                $component->state('enterprise');
+                            } else {
+                                $component->state('client');
+                            }
+                        })
+                        ->afterStateUpdated(function (Forms\Set $set) {
+                            $set('client_id', null);
+                            $set('enterprise_id', null);
+                        })
+                        ->columnSpanFull(),
 
-            Forms\Components\Select::make('client_id')
-                ->label('Cliente')
-                ->relationship('client', 'name')
-                ->searchable()
-                ->preload()
-                ->visible(fn (Forms\Get $get) => $get('party_type') === 'client')
-                ->required(fn (Forms\Get $get) => $get('party_type') === 'client')
-                ->columnSpanFull(),
+                    Forms\Components\Select::make('client_id')
+                        ->label('Cliente')
+                        ->relationship('client', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->visible(fn (Forms\Get $get) => $get('party_type') === 'client')
+                        ->required(fn (Forms\Get $get) => $get('party_type') === 'client')
+                        ->columnSpanFull(),
 
-            Forms\Components\Select::make('enterprise_id')
-                ->label('Empresa')
-                ->relationship('enterprise', 'corporate_reason')
-                ->searchable()
-                ->preload()
-                ->visible(fn (Forms\Get $get) => $get('party_type') === 'enterprise')
-                ->required(fn (Forms\Get $get) => $get('party_type') === 'enterprise')
-                ->columnSpanFull(),
+                    Forms\Components\Select::make('enterprise_id')
+                        ->label('Empresa')
+                        ->relationship('enterprise', 'corporate_reason')
+                        ->searchable()
+                        ->preload()
+                        ->visible(fn (Forms\Get $get) => $get('party_type') === 'enterprise')
+                        ->required(fn (Forms\Get $get) => $get('party_type') === 'enterprise')
+                        ->columnSpanFull(),
 
-            Forms\Components\TextInput::make('opponent_name')
-                ->label('Adverso')
-                ->maxLength(255),
+                    Forms\Components\TextInput::make('opponent_name')
+                        ->label('Adverso')
+                        ->maxLength(255)
+                        ->columnSpanFull(),
 
-            Forms\Components\Select::make('lawyer_id')
-                ->label('Advogado')
-                ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
-                ->searchable()
-                ->preload(),
-
-            Forms\Components\Select::make('registered_by')
-                ->label('Cadastrado por')
-                ->relationship('registeredBy', 'name')
-                ->searchable()
-                ->preload(),
-        ]),
+                    // Múltiplos advogados via pivot
+                    Forms\Components\Select::make('lawyers')
+                        ->label('Advogado(s)')
+                        ->relationship('lawyers', 'name')
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->columnSpanFull(),
+                ]),
 
             Forms\Components\Section::make('Situação')
                 ->columns(2)
@@ -160,9 +157,9 @@ class LegalCaseResource extends Resource
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('client.name')
+                Tables\Columns\TextColumn::make('party')
                     ->label('Parte')
-                    ->getStateUsing(fn (LegalCase $record): string => 
+                    ->getStateUsing(fn (LegalCase $record): string =>
                         $record->client?->name ?? $record->enterprise?->corporate_reason ?? '—'
                     )
                     ->searchable(query: function (Builder $query, string $search) {
@@ -170,10 +167,10 @@ class LegalCaseResource extends Resource
                               ->orWhereHas('enterprise', fn ($q) => $q->where('corporate_reason', 'like', "%{$search}%"));
                     }),
 
-                Tables\Columns\TextColumn::make('lawyer.name')
-                    ->label('Advogado')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('lawyers.name')
+                    ->label('Advogado(s)')
+                    ->listWithLineBreaks()
+                    ->limitList(2),
 
                 Tables\Columns\TextColumn::make('location')
                     ->label('Localização')
@@ -181,11 +178,7 @@ class LegalCaseResource extends Resource
                         $record->courtNumber?->number,
                         $record->courtName?->name,
                         $record->forum?->name,
-                    ])->filter()->join(' - '))
-                    ->searchable(query: function (Builder $query, string $search) {
-                        $query->whereHas('forum', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                              ->orWhereHas('courtName', fn ($q) => $q->where('name', 'like', "%{$search}%"));
-                    }),
+                    ])->filter()->join(' ')),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -244,6 +237,7 @@ class LegalCaseResource extends Resource
         return [
             'index'  => Pages\ListLegalCases::route('/'),
             'create' => Pages\CreateLegalCase::route('/create'),
+            'view'   => Pages\ViewLegalCase::route('/{record}'),
             'edit'   => Pages\EditLegalCase::route('/{record}/edit'),
         ];
     }
