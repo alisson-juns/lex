@@ -9,6 +9,7 @@ use App\Models\CourtNumber;
 use App\Models\Forum;
 use App\Models\Lawyer;
 use App\Models\LegalCase;
+use App\Enums\HearingStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -215,6 +216,66 @@ class LegalCaseResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+
+                Tables\Actions\Action::make('create_hearing')
+                    ->label('Inserir Audiência')
+                    ->icon('heroicon-o-calendar-days')
+                    ->color('gray')
+                    ->modalHeading(fn (LegalCase $record) => "Nova audiência — {$record->case_number}")
+                    ->modalWidth('2xl')
+                    ->form([
+                Forms\Components\Grid::make(2)
+                ->schema([
+                Forms\Components\TextInput::make('description')
+                    ->label('Descrição')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
+
+                Forms\Components\DatePicker::make('date')
+                    ->label('Data')
+                    ->required()
+                    ->displayFormat('d/m/Y'),
+
+                Forms\Components\TimePicker::make('time')
+                    ->label('Hora')
+                    ->required()
+                    ->seconds(false),
+
+                Forms\Components\TextInput::make('location')
+                    ->label('Local')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
+
+                Forms\Components\Select::make('lawyer_id')
+                    ->label('Advogado responsável')
+                    ->options(
+                        fn (LegalCase $record) =>
+                            $record->lawyers()->orderBy('name')->pluck('name', 'lawyers.id')
+                    )
+                    ->searchable(),
+
+                Forms\Components\Select::make('status')
+                    ->label('Status')
+                    ->options(
+                        collect(HearingStatus::cases())
+                            ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
+                    )
+                    ->default(HearingStatus::Scheduled->value)
+                    ->required(),
+
+                Forms\Components\Textarea::make('note')
+                    ->label('Observações')
+                    ->rows(3)
+                    ->columnSpanFull(),
+            ]),
+                    ])
+                    ->action(function (LegalCase $record, array $data) {
+                        $record->hearings()->create($data);
+                    })
+                    ->successNotificationTitle('Audiência inserida com sucesso'),
+
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
