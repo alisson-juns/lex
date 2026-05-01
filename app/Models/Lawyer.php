@@ -47,9 +47,9 @@ class Lawyer extends Model
         return $this->belongsToMany(LegalCase::class, 'legal_case_lawyer');
     }
 
-    public function hearings(): HasOne
+    public function hearings(): HasMany
     {
-        return $this->hasOne(Hearing::class);
+        return $this->hasMany(Hearing::class);
     }
 
     public function lawyer_addresses(): HasOne
@@ -65,5 +65,10 @@ class Lawyer extends Model
     public function lawyer_documents(): HasOne
     {
         return $this->hasOne(LawyerDocument::class);
+    }
+
+    public function tasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'lawyer_task');
     }
 }
