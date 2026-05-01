@@ -58,4 +58,9 @@ class Client extends Model
     {
         return $this->hasMany(LegalCase::class);
     }
+
+    public function powersOfAttorney(): HasMany
+    {
+        return $this->hasMany(PowerOfAttorney::class);
+    }
 }
