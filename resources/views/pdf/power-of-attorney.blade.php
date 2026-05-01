@@ -56,6 +56,16 @@
             border-top: 1px solid #ddd;
             padding-top: 6px;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+        table td, table th {
+            border: 1px solid #333;
+            padding: 4px 8px;
+        }
+
     </style>
 </head>
 <body>

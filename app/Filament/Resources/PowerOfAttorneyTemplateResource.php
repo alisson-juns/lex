@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PowerOfAttorneyTemplateResource\Pages;
 use App\Models\PowerOfAttorneyTemplate;
+use AmidEsfahani\FilamentTinyEditor\TinyEditor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,11 +14,11 @@ use Filament\Tables\Table;
 class PowerOfAttorneyTemplateResource extends Resource
 {
     protected static ?string $model = PowerOfAttorneyTemplate::class;
-    protected static ?string $modelLabel = 'Modelo de Procuração';
-    protected static ?string $pluralModelLabel = 'Modelos de Procuração';
-    protected static ?string $navigationGroup = 'Configurações';
-    protected static ?string $navigationIcon  = 'heroicon-o-document-text';
-    protected static ?int $navigationSort     = 98;
+    protected static ?string $modelLabel        = 'Modelo de Procuração';
+    protected static ?string $pluralModelLabel  = 'Modelos de Procuração';
+    protected static ?string $navigationGroup   = 'Configurações';
+    protected static ?string $navigationIcon    = 'heroicon-o-document-text';
+    protected static ?int    $navigationSort    = 98;
 
     public static function form(Form $form): Form
     {
@@ -32,18 +33,19 @@ class PowerOfAttorneyTemplateResource extends Resource
                 ->default(true)
                 ->inline(false),
 
-            Forms\Components\RichEditor::make('body_text')
+            Forms\Components\Placeholder::make('placeholders_info')
+                ->label('Placeholders disponíveis')
+                ->content('{{client_name}}, {{client_nationality}}, {{client_marital_status}}, {{client_profession}}, {{client_rg}}, {{client_cpf}}, {{client_mother}}, {{client_father}}, {{client_date_of_birth}}, {{client_address}}, {{client_email}}, {{firm_lawyers}}, {{specific_text}}')
+                ->columnSpanFull(),
+
+            TinyEditor::make('body_text')
                 ->label('Texto da Procuração')
                 ->required()
                 ->columnSpanFull()
-                ->toolbarButtons([
-                    'bold', 'italic', 'underline',
-                    'bulletList', 'orderedList',
-                    'undo', 'redo',
-                ])
-                ->helperText('Placeholders disponíveis: {{client_name}}, {{client_nationality}}, {{client_marital_status}}, {{client_profession}}, {{client_rg}}, {{client_cpf}}, {{client_mother}}, {{client_father}}, {{client_date_of_birth}}, {{client_address}}, {{client_email}}, {{firm_lawyers}}, {{specific_text}}'),
-        ]);
-    }
+                ->profile('full')
+                ->helperText('Placeholders: {{client_name}}, {{client_nationality}}, {{client_marital_status}}, {{client_profession}}, {{client_rg}}, {{client_cpf}}, {{client_mother}}, {{client_father}}, {{client_date_of_birth}}, {{client_address}}, {{client_email}}, {{firm_lawyers}}, {{specific_text}}'),
+                    ]);
+                }
 
     public static function table(Table $table): Table
     {
