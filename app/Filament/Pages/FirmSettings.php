@@ -10,7 +10,6 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
-use AmidEsfahani\FilamentTinyEditor\TinyEditor;
 
 class FirmSettings extends Page implements HasForms
 {
@@ -76,15 +75,15 @@ class FirmSettings extends Page implements HasForms
                     ]),
 
                 Forms\Components\Section::make('Advogados')
-                            ->description('Texto que aparecerá na procuração com os dados dos advogados.')
-                            ->schema([
-                                TinyEditor::make('firm_lawyers')
-                                ->label('Parágrafo dos Advogados')
-                                ->columnSpanFull()
-                                ->profile('simple'),
-                                                        ]),
-                                        ])
-                                ->statePath('data');
+                    ->description('Texto que aparecerá na procuração onde estão os dados dos advogados. Use HTML se necessário.')
+                    ->schema([
+                        Forms\Components\Textarea::make('firm_lawyers')
+                            ->label('Parágrafo dos Advogados')
+                            ->rows(4)
+                            ->columnSpanFull(),
+                    ]),
+            ])
+            ->statePath('data');
     }
 
     public function save(): void

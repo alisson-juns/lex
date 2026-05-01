@@ -4,5 +4,8 @@
 @tailwind variants;
 @import '../../../../vendor/filament/filament/resources/css/base.css';
 @import '../../../../vendor/awcodes/filament-tiptap-editor/resources/css/plugin.css';
+@import '../../../../vendor/saade/filament-fullcalendar/resources/css/filament-fullcalendar.css';
+@source '../../../../vendor/saade/filament-fullcalendar/resources/views/**/*.blade.php';
+
 
 @config 'tailwind.config.js';
