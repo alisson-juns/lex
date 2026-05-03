@@ -8,11 +8,14 @@ use App\Filament\Resources\HearingResource;
 use App\Filament\Resources\TaskResource;
 use App\Models\Hearing;
 use App\Models\Task;
+use Filament\Notifications\Notification;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
+use Illuminate\Database\Eloquent\Model;
 
 class CalendarWidget extends FullCalendarWidget
 {
-    
+    public Model|string|int|null $record = null;
+
     public function fetchEvents(array $fetchInfo): array
     {
         $hearings = Hearing::query()
@@ -21,16 +24,17 @@ class CalendarWidget extends FullCalendarWidget
             ->with('legalCase', 'lawyer')
             ->get()
             ->map(fn (Hearing $hearing) => [
-                'id'                  => 'hearing-' . $hearing->id,
-                'title'               => '⚖️ ' . $hearing->description,
-                'start'               => $hearing->date->toDateString()
-                                         . ($hearing->time ? 'T' . $hearing->time : ''),
-                'backgroundColor'     => '#3b82f6', // blue-500
-                'borderColor'         => '#2563eb', // blue-600
-                'textColor'           => '#ffffff',
-                'url'                 => HearingResource::getUrl('view', ['record' => $hearing->id]),
+                'id'                    => 'hearing-' . $hearing->id,
+                'title'                 => '⚖️ ' . $hearing->description,
+                'start'                 => $hearing->date->toDateString()
+                                           . ($hearing->time ? 'T' . $hearing->time : ''),
+                'backgroundColor'       => '#3b82f6',
+                'borderColor'           => '#2563eb',
+                'textColor'             => '#ffffff',
+                'url'                   => HearingResource::getUrl('view', ['record' => $hearing->id]),
                 'shouldOpenUrlInNewTab' => false,
-                'extendedProps'       => [
+                'editable'              => false, // audiências não são arrastáveis
+                'extendedProps'         => [
                     'type'    => 'hearing',
                     'status'  => $hearing->status->label(),
                     'process' => $hearing->legalCase?->case_number,
@@ -44,16 +48,17 @@ class CalendarWidget extends FullCalendarWidget
             ->with('lawyers', 'legalCase')
             ->get()
             ->map(fn (Task $task) => [
-                'id'                  => 'task-' . $task->id,
-                'title'               => '📋 ' . $task->title,
-                'start'               => $task->due_date->toDateString()
-                                         . ($task->due_time ? 'T' . $task->due_time : ''),
-                'backgroundColor'     => '#f59e0b', // amber-400
-                'borderColor'         => '#d97706', // amber-500
-                'textColor'           => '#ffffff',
-                'url'                 => TaskResource::getUrl('view', ['record' => $task->id]),
+                'id'                    => 'task-' . $task->id,
+                'title'                 => '📋 ' . $task->title,
+                'start'                 => $task->due_date->toDateString()
+                                           . ($task->due_time ? 'T' . $task->due_time : ''),
+                'backgroundColor'       => '#f59e0b',
+                'borderColor'           => '#d97706',
+                'textColor'             => '#ffffff',
+                'url'                   => TaskResource::getUrl('view', ['record' => $task->id]),
                 'shouldOpenUrlInNewTab' => false,
-                'extendedProps'       => [
+                'editable'              => true, // tarefas são arrastáveis
+                'extendedProps'         => [
                     'type'    => 'task',
                     'status'  => $task->status->label(),
                     'process' => $task->legalCase?->case_number,
@@ -64,26 +69,75 @@ class CalendarWidget extends FullCalendarWidget
         return array_merge($hearings->toArray(), $tasks->toArray());
     }
 
+    // Chamado pelo FullCalendar após drag & drop
+            public function onEventDrop(
+                array $event,
+                array $oldEvent,
+                array $relatedEvents,
+                array $delta,
+                ?array $oldResource,
+                ?array $newResource
+            ): bool {   
+     
+        // Ignora se não for uma tarefa
+        if (($event['extendedProps']['type'] ?? null) !== 'task') {
+            return false;
+        }
+
+        // Extrai o ID numérico do formato "task-{id}"
+        $taskId = (int) str_replace('task-', '', $event['id']);
+        $task   = Task::find($taskId);
+
+        if (! $task) {
+            return false;
+        }
+
+        // O FullCalendar envia a data no formato ISO 8601
+        // Ex: "2026-05-10" ou "2026-05-10T14:00:00"
+        $newStart = $event['start'];
+        $newDate  = substr($newStart, 0, 10); // pega só YYYY-MM-DD
+        $newTime  = strlen($newStart) > 10
+            ? substr($newStart, 11, 5)  // pega HH:MM
+            : null;
+
+        $task->update([
+            'due_date' => $newDate,
+            'due_time' => $newTime ?? $task->due_time, // mantém hora original se arrastado em dayGridMonth
+            'status'   => TaskStatus::Rescheduled->value,
+        ]);
+
+        Notification::make()
+            ->title('Tarefa reagendada')
+            ->body("\"{$task->title}\" movida para " . \Carbon\Carbon::parse($newDate)->format('d/m/Y') . '.')
+            ->success()
+            ->send();
+
+        $this->refreshRecords();
+        return true;
+    }
+
     public function config(): array
     {
         return [
-            'firstDay'      => 0, // Domingo
-            'locale'        => 'pt-br',
-            'timeZone'      => config('app.timezone'),
-            'headerToolbar' => [
+            'firstDay'        => 0,
+            'locale'          => 'pt-br',
+            'timeZone'        => config('app.timezone'),
+            'editable'        => true,  // habilita drag globalmente; por evento controlamos com 'editable' => false
+            'eventStartEditable' => true,
+            'headerToolbar'   => [
                 'left'   => 'prev,next today',
                 'center' => 'title',
                 'right'  => 'dayGridMonth,timeGridWeek,listMonth',
             ],
-            'buttonText' => [
-                'today'  => 'Hoje',
-                'month'  => 'Mês',
-                'week'   => 'Semana',
-                'day'    => 'Dia',
-                'list'   => 'Lista',
+            'buttonText'      => [
+                'today' => 'Hoje',
+                'month' => 'Mês',
+                'week'  => 'Semana',
+                'day'   => 'Dia',
+                'list'  => 'Lista',
             ],
-            'noEventsText'   => 'Nenhum evento neste período',
-            'allDayText'     => 'Dia inteiro',
+            'noEventsText'    => 'Nenhum evento neste período',
+            'allDayText'      => 'Dia inteiro',
             'eventTimeFormat' => [
                 'hour'   => '2-digit',
                 'minute' => '2-digit',
@@ -92,7 +146,6 @@ class CalendarWidget extends FullCalendarWidget
         ];
     }
 
-    // Tooltip com detalhes ao passar o mouse
     public function eventDidMount(): string
     {
         return <<<JS

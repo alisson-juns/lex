@@ -62,7 +62,6 @@ class AdminPanelProvider extends PanelProvider
                 FilamentShieldPlugin::make(),
                 FilamentFullCalendarPlugin::make()
                     ->selectable(false)
-                    ->editable(false)
                     ->timezone(config('app.timezone'))
                     ->locale('pt-br'),
             ])
