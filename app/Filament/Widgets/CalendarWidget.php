@@ -480,9 +480,16 @@ class CalendarWidget extends FullCalendarWidget
                             <span>${dateStr}${timeStr ? ' · ' + timeStr : ''}</span>
                          </div>`;
                 if (props.status) {
+                    // Calcula luminância para escolher texto preto ou branco
+                    const hex = color.replace('#','');
+                    const r = parseInt(hex.slice(0,2),16)/255;
+                    const g = parseInt(hex.slice(2,4),16)/255;
+                    const b = parseInt(hex.slice(4,6),16)/255;
+                    const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+                    const badgeText = lum > 0.45 ? '#1f2937' : '#ffffff';
                     rows += `<div class="fcp-row">
                                 <span>● Status</span>
-                                <span><span class="fcp-badge" style="background:${color}">${props.status}</span></span>
+                                <span><span class="fcp-badge" style="background:${color};color:${badgeText}">${props.status}</span></span>
                              </div>`;
                 }
                 if (props.process) {

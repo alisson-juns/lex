@@ -12,6 +12,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use Filament\Support\Assets\Css;
+use Filament\Support\Facades\FilamentAsset;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -22,6 +24,12 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+{
+    FilamentAsset::register([
+Css::make('fullcalendar-custom', base_path('resources/css/fullcalendar-custom.css')),    ]);
+}
+
     public function panel(Panel $panel): Panel
     {
         return $panel
