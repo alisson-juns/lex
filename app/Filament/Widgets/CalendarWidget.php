@@ -6,10 +6,12 @@ use App\Enums\HearingStatus;
 use App\Enums\TaskStatus;
 use App\Filament\Resources\HearingResource;
 use App\Filament\Resources\TaskResource;
+use App\Models\FirmSetting;
 use App\Models\Hearing;
 use App\Models\Lawyer;
 use App\Models\LegalCase;
 use App\Models\Task;
+use App\Services\HolidayService;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -81,7 +83,17 @@ class CalendarWidget extends FullCalendarWidget
                 ],
             ]);
 
-        return array_merge($hearings->toArray(), $tasks->toArray());
+        // ── Feriados ──────────────────────────────────────
+        $settings = FirmSetting::instance();
+
+        $holidays = (new HolidayService())->getEvents(
+            $fetchInfo['start'],
+            $fetchInfo['end'],
+            $settings->holiday_states ?? [],
+            $settings->holiday_cities ?? []
+        );
+
+        return array_merge($hearings->toArray(), $tasks->toArray(), $holidays);
     }
 
     // ─────────────────────────────────────────────
@@ -335,6 +347,13 @@ class CalendarWidget extends FullCalendarWidget
     {
         return <<<'JS'
         function({ event, el }) {
+
+            // ── Feriados: colore o número do dia e não abre popover
+            if (event.extendedProps?.type === 'holiday') {
+                const cell = el.closest('.fc-daygrid-day');
+                if (cell) cell.classList.add('has-holiday');
+                return;
+            }
 
             // ── Injeta CSS do popover uma única vez ──────────────
             if (!document.getElementById('fc-popover-style')) {

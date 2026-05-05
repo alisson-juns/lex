@@ -16,9 +16,15 @@ class FirmSetting extends Model
         'firm_email',
         'firm_logo',
         'firm_lawyers',
+        'holiday_states',
+        'holiday_cities',
     ];
 
-    // Sempre trabalha com a linha única
+    protected $casts = [
+        'holiday_states' => 'array',
+        'holiday_cities' => 'array',
+    ];
+
     public static function instance(): self
     {
         return static::firstOrCreate(['id' => 1]);

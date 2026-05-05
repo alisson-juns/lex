@@ -3,13 +3,14 @@
 namespace App\Filament\Pages;
 
 use App\Models\FirmSetting;
+use App\Services\HolidayService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Support\Facades\Storage;
 
 class FirmSettings extends Page implements HasForms
 {
@@ -18,8 +19,8 @@ class FirmSettings extends Page implements HasForms
     protected static ?string $navigationIcon  = 'heroicon-o-building-office';
     protected static ?string $navigationLabel = 'Configurações do Escritório';
     protected static ?string $navigationGroup = 'Configurações';
-    protected static ?int $navigationSort     = 99;
-    protected static string $view             = 'filament.pages.firm-settings';
+    protected static ?int    $navigationSort  = 99;
+    protected static string  $view            = 'filament.pages.firm-settings';
 
     public ?array $data = [];
 
@@ -81,6 +82,66 @@ class FirmSettings extends Page implements HasForms
                             ->label('Parágrafo dos Advogados')
                             ->rows(4)
                             ->columnSpanFull(),
+                    ]),
+
+                // ── Feriados ──────────────────────────────────────
+                Forms\Components\Section::make('Feriados no Calendário')
+                    ->description('Feriados nacionais são exibidos automaticamente. Configure abaixo os feriados estaduais e municipais.')
+                    ->icon('heroicon-o-calendar-days')
+                    ->schema([
+
+                        Forms\Components\Select::make('holiday_states')
+                            ->label('Estados')
+                            ->options([
+                                'AC' => 'Acre',
+                                'AL' => 'Alagoas',
+                                'AP' => 'Amapá',
+                                'AM' => 'Amazonas',
+                                'BA' => 'Bahia',
+                                'CE' => 'Ceará',
+                                'DF' => 'Distrito Federal',
+                                'ES' => 'Espírito Santo',
+                                'GO' => 'Goiás',
+                                'MA' => 'Maranhão',
+                                'MT' => 'Mato Grosso',
+                                'MS' => 'Mato Grosso do Sul',
+                                'MG' => 'Minas Gerais',
+                                'PA' => 'Pará',
+                                'PB' => 'Paraíba',
+                                'PR' => 'Paraná',
+                                'PE' => 'Pernambuco',
+                                'PI' => 'Piauí',
+                                'RJ' => 'Rio de Janeiro',
+                                'RN' => 'Rio Grande do Norte',
+                                'RS' => 'Rio Grande do Sul',
+                                'RO' => 'Rondônia',
+                                'RR' => 'Roraima',
+                                'SC' => 'Santa Catarina',
+                                'SP' => 'São Paulo',
+                                'SE' => 'Sergipe',
+                                'TO' => 'Tocantins',
+                            ])
+                            ->multiple()
+                            ->searchable()
+                            ->live()                          // ← ao mudar estados, atualiza lista de municípios
+                            ->placeholder('Selecione os estados...')
+                            ->helperText('Feriados estaduais dos estados selecionados serão exibidos no calendário.')
+                            ->columnSpanFull(),
+
+                        Forms\Components\Select::make('holiday_cities')
+                            ->label('Municípios')
+                            ->options(fn (Get $get) => HolidayService::getMunicipios(
+                                $get('holiday_states') ?? []
+                            ))
+                            ->multiple()
+                            ->searchable()
+                            ->placeholder(fn (Get $get) => empty($get('holiday_states'))
+                                ? 'Selecione ao menos um estado primeiro...'
+                                : 'Selecione os municípios...'
+                            )
+                            ->helperText('Lista filtrada pelos estados selecionados acima. Requer storage/app/feriados/municipios.json.')
+                            ->columnSpanFull(),
+
                     ]),
             ])
             ->statePath('data');

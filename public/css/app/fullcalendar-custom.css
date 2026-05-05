@@ -223,3 +223,63 @@ html.dark .filament-fullcalendar .fc-timegrid-slot {
 html.dark .filament-fullcalendar .fc-scroller::-webkit-scrollbar-thumb {
     background: #374151;
 }
+
+/* ── Feriados ───────────────────────────────────────────────────────── */
+
+/* Evento de feriado — sem fundo, só texto vermelho bold */
+.filament-fullcalendar .fc-event.lex-holiday {
+    background:  transparent !important;
+    border:      none !important;
+    box-shadow:  none !important;
+    font-weight: 600 !important;
+    font-style:  normal !important;
+    font-size:   0.68rem !important;
+    color:       #dc2626 !important;
+    padding:     0 0.2rem !important;
+    margin-top:  0.1rem !important;
+    cursor:      default !important;
+    pointer-events: none;
+}
+
+html.dark .filament-fullcalendar .fc-event.lex-holiday {
+    color: #f87171 !important; /* red-400 — mais legível no dark */
+}
+
+/* Número do dia quando há feriado */
+.filament-fullcalendar .fc-daygrid-day.has-holiday .fc-daygrid-day-number {
+    color:       #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+html.dark .filament-fullcalendar .fc-daygrid-day.has-holiday .fc-daygrid-day-number {
+    color: #f87171 !important;
+}
+
+/* Hoje + feriado — mantém o círculo mas em vermelho */
+.filament-fullcalendar .fc-day-today.has-holiday .fc-daygrid-day-number {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+/* ── Domingo — cabeçalho e números sempre em vermelho ───────────────── */
+.filament-fullcalendar .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion {
+    color: #dc2626 !important;
+}
+
+html.dark .filament-fullcalendar .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion {
+    color: #f87171 !important;
+}
+
+.filament-fullcalendar .fc-day-sun .fc-daygrid-day-number {
+    color: #dc2626 !important;
+}
+
+html.dark .filament-fullcalendar .fc-day-sun .fc-daygrid-day-number {
+    color: #f87171 !important;
+}
+
+/* Hoje que é domingo */
+.filament-fullcalendar .fc-day-today.fc-day-sun .fc-daygrid-day-number {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+}
