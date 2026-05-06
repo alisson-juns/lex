@@ -223,3 +223,9 @@ html.dark .filament-fullcalendar .fc-timegrid-slot {
 html.dark .filament-fullcalendar .fc-scroller::-webkit-scrollbar-thumb {
     background: #374151;
 }
+
+.filament-fullcalendar .fc-event.lex-holiday .fc-event-title {
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+}
