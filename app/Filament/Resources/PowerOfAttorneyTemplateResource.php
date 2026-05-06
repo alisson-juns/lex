@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms\Components\View;
 
 class PowerOfAttorneyTemplateResource extends Resource
 {
@@ -33,17 +34,14 @@ class PowerOfAttorneyTemplateResource extends Resource
                 ->default(true)
                 ->inline(false),
 
-            Forms\Components\Placeholder::make('placeholders_info')
-                ->label('Placeholders disponíveis')
-                ->content('{{client_name}}, {{client_nationality}}, {{client_marital_status}}, {{client_profession}}, {{client_rg}}, {{client_cpf}}, {{client_mother}}, {{client_father}}, {{client_date_of_birth}}, {{client_address}}, {{client_email}}, {{firm_lawyers}}, {{specific_text}}')
+            View::make('filament.components.placeholder-buttons')
                 ->columnSpanFull(),
 
             TinyEditor::make('body_text')
                 ->label('Texto da Procuração')
                 ->required()
                 ->columnSpanFull()
-                ->profile('full')
-                ->helperText('Placeholders: {{client_name}}, {{client_nationality}}, {{client_marital_status}}, {{client_profession}}, {{client_rg}}, {{client_cpf}}, {{client_mother}}, {{client_father}}, {{client_date_of_birth}}, {{client_address}}, {{client_email}}, {{firm_lawyers}}, {{specific_text}}'),
+                ->profile('full'),
                     ]);
                 }
 
