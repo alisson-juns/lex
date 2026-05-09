@@ -24,6 +24,10 @@ class Client extends Model
         'note',
     ];
 
+    protected $casts = [
+    'date_of_birth' => 'date',
+    ];
+
     public function client_documents(): HasOne
     {
         return $this->hasOne(ClientDocument::class);

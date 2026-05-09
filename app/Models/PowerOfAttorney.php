@@ -14,6 +14,7 @@ class PowerOfAttorney extends Model
         'power_of_attorney_template_id',
         'user_id',
         'specific_text',
+        'rendered_body',
     ];
 
     public function client(): BelongsTo

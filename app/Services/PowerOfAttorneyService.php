@@ -2,102 +2,79 @@
 
 namespace App\Services;
 
-use App\Models\FirmSetting;
 use App\Models\PowerOfAttorney;
+use App\Models\FirmSetting;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Carbon;
 
 class PowerOfAttorneyService
 {
-    public function generate(PowerOfAttorney $poa): \Barryvdh\DomPDF\PDF
-{
-    $poa->load(['client.client_documents', 'client.client_addresses', 'client.client_contacts', 'template']);
-
-    $client  = $poa->client;
-    $docs    = $client->client_documents;
-    $address = $client->client_addresses;
-    $contact = $client->client_contacts;
-    $firm    = FirmSetting::instance();
-
-    $logoBase64 = null;
-    if ($firm->firm_logo && file_exists(storage_path('app/public/' . $firm->firm_logo))) {
-        $logoData   = file_get_contents(storage_path('app/public/' . $firm->firm_logo));
-        $logoMime   = mime_content_type(storage_path('app/public/' . $firm->firm_logo));
-        $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
-    }
-
-    $fullAddress = collect([
-        $address?->street,
-        $address?->number,
-        $address?->complement,
-        $address?->district,
-        $address?->city,
-        $address?->state,
-        $address?->zipcode ? 'CEP: ' . $address->zipcode : null,
-    ])->filter()->join(', ');
-
-            $placeholders = [
-                '{{client_name}}'           => $client->name ?? '',
-                '{{client_nationality}}'    => $client->nationality ?? '',
-                '{{client_marital_status}}' => $this->maritalStatus($client->marital_status),
-                '{{client_profession}}'     => $client->profession ?? '',
-                '{{client_rg}}'             => $docs?->rg ?? '',
-                '{{client_cpf}}'            => $docs?->cpf ?? '',
-                '{{client_mother}}'         => $client->mother ?? '',
-                '{{client_father}}'         => $client->father ?? '',
-                '{{client_date_of_birth}}'  => $client->date_of_birth
-                    ? Carbon::parse($client->date_of_birth)->format('d/m/Y')
-                    : '',
-                '{{client_address}}'        => $fullAddress,
-                '{{client_email}}'          => $contact?->email ?? '',
-                '{{firm_lawyers}}'          => $firm->firm_lawyers ?? '',
-                '{{specific_text}}'         => $poa->specific_text,
-            ];
-            
-            // Converte chips <span data-placeholder="client_name"> de volta para {{client_name}}
-            $bodyRaw = preg_replace(
-                '/<span\b[^>]*\bdata-placeholder="([^"]+)"[^>]*>.*?<\/span>/s',
-                '{{$1}}',
-                $poa->template->body_text
-            );
-            
-            $body = str_replace(
-                array_keys($placeholders),
-                array_values($placeholders),
-                $bodyRaw
-            );
-
-    // ... resto do método continua igual
-
-        $currentDate = $this->dateByExtension(now()->toDateString());
-        $firmCity    = $firm->firm_city ?? 'Santos';
-
-        $pdf = Pdf::loadView('pdf.power-of-attorney', compact(
-            'body', 'firm', 'logoBase64', 'currentDate', 'firmCity'
-        ))->setPaper('a4', 'portrait');
-
-        return $pdf;
-    }
-
-    private function maritalStatus(?string $status): string
+    public function render(PowerOfAttorney $poa): string
     {
-        return match ($status) {
-            'single'    => 'solteiro(a)',
-            'married'   => 'casado(a)',
-            'separated' => 'separado(a)',
-            'divorced'  => 'divorciado(a)',
-            'widowed'   => 'viúvo(a)',
-            default     => '',
-        };
-    }
+        $poa->load(['client.client_addresses', 'client.client_documents', 'client.client_contacts', 'template']);
+        $client   = $poa->client;
+        $settings = FirmSetting::instance();
 
-    private function dateByExtension(string $date): string
-    {
-        $months = [
-            1 => 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-            'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+        $address = collect([
+            $client->client_addresses?->street,
+            $client->client_addresses?->number,
+            $client->client_addresses?->complement,
+            $client->client_addresses?->district,
+            $client->client_addresses?->city,
+            $client->client_addresses?->state,
+            $client->client_addresses?->zipcode,
+        ])->filter()->join(', ');
+
+        $values = [
+            'client_name'           => $client->name ?? '',
+            'client_nationality'    => $client->nationality ?? '',
+            'client_marital_status' => $client->marital_status ?? '',
+            'client_profession'     => $client->profession ?? '',
+            'client_rg'             => $client->client_documents?->rg ?? '',
+            'client_cpf'            => $client->client_documents?->cpf ?? '',
+            'client_mother'         => $client->mother ?? '',
+            'client_father'         => $client->father ?? '',
+            'client_date_of_birth'  => $client->date_of_birth
+                ? \Carbon\Carbon::parse($client->date_of_birth)->format('d/m/Y')
+                : '',
+            'client_address'        => $address,
+            'client_email'          => $client->client_contacts?->email ?? '',
+            'firm_lawyers'          => $settings->firm_lawyers ?? '',
+            'specific_text'         => $poa->specific_text,
         ];
-        $dt = Carbon::parse($date);
-        return $dt->day . ' de ' . $months[$dt->month] . ' de ' . $dt->year;
+
+        $body = html_entity_decode($poa->template->body_text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Substitui <span data-placeholder="chave" ...>label</span> pelo valor real
+        $body = preg_replace_callback(
+            '/<span[^>]*data-placeholder="([^"]+)"[^>]*>.*?<\/span>/s',
+            function (array $matches) use ($values): string {
+                return $values[$matches[1]] ?? $matches[0];
+            },
+            $body
+        );
+
+        return $body;
+    }
+
+    public function generate(PowerOfAttorney $poa): \Barryvdh\DomPDF\PDF
+    {
+        $poa->load('client');
+        $html = $poa->rendered_body ?? $this->render($poa);
+        $firm = FirmSetting::instance();
+    
+        $logoBase64 = null;
+        if ($firm->firm_logo && \Storage::disk('public')->exists($firm->firm_logo)) {
+            $mime       = mime_content_type(\Storage::disk('public')->path($firm->firm_logo));
+            $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(\Storage::disk('public')->get($firm->firm_logo));
+        }
+    
+        return Pdf::loadView('pdf.power-of-attorney', [
+            'body'        => $html,
+            'firm'        => $firm,
+            'firmCity'    => $firm->firm_city ?? '',
+            'currentDate' => now()->translatedFormat('d \d\e F \d\e Y'),
+            'client'      => $poa->client,
+            'logoBase64'  => $logoBase64,
+        ])->setPaper('a4');
     }
 }
