@@ -18,6 +18,10 @@ class PowersOfAttorneyRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('template.name')
                     ->label('Tipo'),
+                Tables\Columns\TextColumn::make('lawyers.name')
+                    ->label('Advogado(s)')
+                    ->badge()
+                    ->separator(','),
                 Tables\Columns\TextColumn::make('specific_text')
                     ->label('Fim específico')
                     ->limit(60),
@@ -34,7 +38,10 @@ class PowersOfAttorneyRelationManager extends RelationManager
                     ->label('Abrir PDF')
                     ->icon('heroicon-o-document')
                     ->color('gray')
-                    ->url(fn ($record) => route('power-of-attorney.pdf', $record->id))
+                    ->url(fn ($record) => $record->pdf_path
+                        ? \Storage::disk('public')->url($record->pdf_path)
+                        : route('power-of-attorney.pdf', $record->id)
+                    )
                     ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make(),

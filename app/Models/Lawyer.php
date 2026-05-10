@@ -71,4 +71,9 @@ class Lawyer extends Model
     {
         return $this->belongsToMany(Task::class, 'lawyer_task');
     }
+
+    public function powersOfAttorney(): BelongsToMany
+    {
+        return $this->belongsToMany(PowerOfAttorney::class, 'lawyer_power_of_attorney');
+    }
 }

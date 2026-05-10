@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class PowerOfAttorney extends Model
 {
@@ -15,6 +16,7 @@ class PowerOfAttorney extends Model
         'user_id',
         'specific_text',
         'rendered_body',
+        'pdf_path',
     ];
 
     public function client(): BelongsTo
@@ -30,5 +32,10 @@ class PowerOfAttorney extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function lawyers(): BelongsToMany
+    {
+        return $this->belongsToMany(Lawyer::class, 'lawyer_power_of_attorney');
     }
 }

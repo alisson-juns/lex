@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ClientResource\Pages;
 use App\Models\PowerOfAttorney;
 use App\Models\PowerOfAttorneyTemplate;
 use App\Services\PowerOfAttorneyService;
+use App\Models\Lawyer;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -32,6 +33,19 @@ class ViewClient extends ViewRecord
                         )
                         ->required(),
 
+                    Forms\Components\Select::make('lawyer_ids')
+                        ->label('Advogado(s)')
+                        ->options(
+                            Lawyer::where('active', true)
+                                ->orderBy('name')
+                                ->get()
+                                ->mapWithKeys(fn ($l) => [
+                                    $l->id => $l->name . ($l->oab ? ' — OAB ' . $l->oab . '/' . $l->oab_state : ''),
+                                ])
+                        )
+                        ->multiple()
+                        ->required(),
+
                     Forms\Components\Textarea::make('specific_text')
                         ->label('Fim específico do mandato')
                         ->placeholder('Ex: Ação de Indenização por Danos Morais e Materiais...')
@@ -46,6 +60,8 @@ class ViewClient extends ViewRecord
                         'specific_text'                 => $data['specific_text'],
                     ]);
 
+                    $poa->lawyers()->sync($data['lawyer_ids']);
+
                     $poa->update(['rendered_body' => $service->render($poa)]);
 
                     $this->redirect(
@@ -54,6 +70,6 @@ class ViewClient extends ViewRecord
                 })
                 ->modalHeading('Gerar Procuração')
                 ->modalSubmitActionLabel('Continuar →'),
-        ];
+                    ];
     }
 }

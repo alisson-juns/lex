@@ -11,10 +11,13 @@ class PowerOfAttorneyController extends Controller
 
     public function pdf(PowerOfAttorney $powerOfAttorney)
     {
-        $pdf = $this->service->generate($powerOfAttorney);
-
-        $filename = 'procuracao-' . $powerOfAttorney->id . '.pdf';
-
-        return $pdf->stream($filename);
+        $path = $this->service->generate($powerOfAttorney);
+    
+        return response()->file(
+            \Storage::disk('public')->path($path),
+            ['Content-Type' => 'application/pdf']
+        );
     }
+
+
 }
