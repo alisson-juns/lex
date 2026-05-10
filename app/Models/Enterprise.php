@@ -22,6 +22,21 @@ class Enterprise extends Model
         return $this->hasOne(EnterpriseDocument::class);
     }
 
+    public function enterprise_addresses(): HasOne
+    {
+        return $this->hasOne(EnterpriseAddress::class);
+    }
+
+    public function enterprise_contacts(): HasOne
+    {
+        return $this->hasOne(EnterpriseContact::class);
+    }
+
+    public function enterprise_bank_accounts(): HasOne
+    {
+        return $this->hasOne(EnterpriseBankAccount::class);
+    }
+
     public function enterprise_representatives(): HasMany
     {
         return $this->hasMany(EnterpriseRepresentative::class);

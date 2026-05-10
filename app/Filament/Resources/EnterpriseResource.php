@@ -7,7 +7,6 @@ use App\Models\Enterprise;
 use App\Models\EnterpriseDocument;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
-use App\Models\Lawyer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -70,8 +69,8 @@ class EnterpriseResource extends Resource
                                         ->unique(EnterpriseDocument::class, 'cnpj', ignoreRecord: true)
                                         ->validationMessages([
                                             'required' => 'O campo CNPJ é obrigatório.',
-                                            'cnpj' => 'Número de CNPJ inválido.',
-                                            'unique' => 'Este CNPJ já foi registrado.',
+                                            'cnpj'     => 'Número de CNPJ inválido.',
+                                            'unique'   => 'Este CNPJ já foi registrado.',
                                         ]),
                                     Forms\Components\TextInput::make('ie')
                                         ->label('Inscrição Estadual')
@@ -87,49 +86,138 @@ class EnterpriseResource extends Resource
                                 ->columns(2),
                         ]),
 
+                    Step::make('Endereço')
+                        ->icon('heroicon-m-map-pin')
+                        ->schema([
+                            Forms\Components\Group::make()
+                                ->relationship('enterprise_addresses')
+                                ->schema([
+                                    Cep::make('zipcode')
+                                        ->label('CEP')
+                                        ->viaCep(
+                                            mode: 'suffix',
+                                            errorMessage: 'CEP inválido.',
+                                            setFields: [
+                                                'street'   => 'logradouro',
+                                                'district' => 'bairro',
+                                                'city'     => 'localidade',
+                                                'state'    => 'uf',
+                                            ]
+                                        ),
+                                    Forms\Components\TextInput::make('street')
+                                        ->label('Logradouro')
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('number')
+                                        ->label('Número')
+                                        ->maxLength(50),
+                                    Forms\Components\TextInput::make('complement')
+                                        ->label('Complemento')
+                                        ->maxLength(50),
+                                    Forms\Components\TextInput::make('district')
+                                        ->label('Bairro')
+                                        ->maxLength(50),
+                                    Forms\Components\TextInput::make('city')
+                                        ->label('Cidade')
+                                        ->maxLength(50),
+                                    Forms\Components\TextInput::make('state')
+                                        ->label('Estado')
+                                        ->maxLength(50),
+                                ])
+                                ->columns(2),
+                        ]),
+
+                    Step::make('Contatos')
+                        ->icon('heroicon-m-phone')
+                        ->schema([
+                            Forms\Components\Group::make()
+                                ->relationship('enterprise_contacts')
+                                ->schema([
+                                    Forms\Components\TextInput::make('email')
+                                        ->label('E-mail')
+                                        ->email()
+                                        ->maxLength(50),
+                                    Forms\Components\TextInput::make('optional_email')
+                                        ->label('E-mail Alternativo')
+                                        ->email()
+                                        ->maxLength(50),
+                                    Forms\Components\TextInput::make('cellphone')
+                                        ->label('Celular')
+                                        ->mask('(99) 99999-9999')
+                                        ->maxLength(20),
+                                    Forms\Components\TextInput::make('phone')
+                                        ->label('Telefone Fixo')
+                                        ->mask('(99) 9999-9999')
+                                        ->maxLength(20),
+                                    Forms\Components\TextInput::make('message_cell_phone')
+                                        ->label('WhatsApp / Celular Recado')
+                                        ->mask('(99) 99999-9999')
+                                        ->maxLength(20),
+                                    Forms\Components\TextInput::make('message_phone')
+                                        ->label('Telefone Recado')
+                                        ->mask('(99) 9999-9999')
+                                        ->maxLength(20),
+                                    Forms\Components\Textarea::make('note')
+                                        ->label('Observações')
+                                        ->rows(3)
+                                        ->columnSpanFull(),
+                                ])
+                                ->columns(2),
+                        ]),
+
+                    Step::make('Dados Bancários')
+                        ->icon('heroicon-m-banknotes')
+                        ->schema([
+                            Forms\Components\Group::make()
+                                ->relationship('enterprise_bank_accounts')
+                                ->schema([
+                                    Forms\Components\TextInput::make('bank_number')
+                                        ->label('Número do Banco')
+                                        ->maxLength(10),
+                                    Forms\Components\TextInput::make('bank_name')
+                                        ->label('Nome do Banco')
+                                        ->maxLength(50),
+                                    Forms\Components\TextInput::make('agency')
+                                        ->label('Agência')
+                                        ->maxLength(20),
+                                    Forms\Components\TextInput::make('account')
+                                        ->label('Conta')
+                                        ->maxLength(20),
+                                ])
+                                ->columns(2),
+                        ]),
+
                     Step::make('Representantes')
-                        ->icon('heroicon-m-user-group')
-                        ->description('Representantes legais da empresa')
+                        ->icon('heroicon-m-users')
                         ->schema([
                             Forms\Components\Repeater::make('enterprise_representatives')
-                                ->relationship('enterprise_representatives')
+                                ->relationship()
                                 ->schema([
-                                    Forms\Components\Grid::make(2)
-                                        ->schema([
-                                            Forms\Components\TextInput::make('name')
-                                                ->label('Nome completo')
-                                                ->required()
-                                                ->maxLength(255)
-                                                ->columnSpan(2),
-                                            Forms\Components\Select::make('gender')
-                                                ->label('Gênero')
-                                                ->options([
-                                                    'male' => 'Masculino',
-                                                    'female' => 'Feminino',
-                                                    'other' => 'Outro',
-                                                ]),
-                                            Forms\Components\TextInput::make('position')
-                                                ->label('Cargo/Função')
-                                                ->maxLength(255),
-                                            Forms\Components\Textarea::make('note')
-                                                ->label('Observações')
-                                                ->rows(2)
-                                                ->columnSpan(2),
+                                    Forms\Components\TextInput::make('name')
+                                        ->label('Nome')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Forms\Components\Select::make('gender')
+                                        ->label('Gênero')
+                                        ->options([
+                                            'male'   => 'Masculino',
+                                            'female' => 'Feminino',
+                                            'other'  => 'Outro',
                                         ]),
+                                    Forms\Components\TextInput::make('position')
+                                        ->label('Cargo / Função')
+                                        ->maxLength(255),
+                                    Forms\Components\Textarea::make('note')
+                                        ->label('Observações')
+                                        ->rows(2)
+                                        ->columnSpanFull(),
                                 ])
-                                ->itemLabel(fn(array $state): ?string =>
-                                    $state['name']
-                                        ? "{$state['name']}" . ($state['position'] ? " — {$state['position']}" : '')
-                                        : 'Novo representante'
-                                )
-                                ->addActionLabel('Adicionar representante')
-                                ->deleteAction(fn($action) => $action->requiresConfirmation())
-                                ->reorderable()
-                                ->collapsible(),
+                                ->columns(2)
+                                ->addActionLabel('Adicionar Representante')
+                                ->columnSpanFull(),
                         ]),
                 ])
-                    ->skippable()
-                    ->columnSpan('full'),
+                ->columnSpanFull()
+                ->skippable(),
             ]);
     }
 
@@ -137,107 +225,28 @@ class EnterpriseResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('enterprise_documents.cnpj')
-                    ->label('CNPJ')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('corporate_reason')
                     ->label('Razão Social')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('trade_name')
                     ->label('Nome Fantasia')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('enterprise_documents.cnpj')
+                    ->label('CNPJ')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Criado em')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Atualizado em')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Cadastrado em')
+                    ->date('d/m/Y')
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\Action::make('create_case')
-                    ->label('Inserir Processo')
-                    ->icon('heroicon-o-scale')
-                    ->color('gray')
-                    ->modalHeading(fn (Enterprise $record) => "Novo processo — {$record->corporate_reason}")
-                    ->modalWidth('3xl')
-                    ->form([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('folder_number')
-                                    ->label('Nº da Pasta')
-                                    ->maxLength(255),
-
-                                Forms\Components\TextInput::make('case_number')
-                                    ->label('Nº do Processo')
-                                    ->maxLength(255),
-                            ]),
-
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\Select::make('court_number_id')
-                                    ->label('Nº da Vara')
-                                    ->options(\App\Models\CourtNumber::orderBy('id')->pluck('number', 'id'))
-                                    ->searchable(),
-
-                                Forms\Components\Select::make('court_name_id')
-                                    ->label('Nome da Vara')
-                                    ->options(\App\Models\CourtName::orderBy('id')->pluck('name', 'id'))
-                                    ->searchable(),
-
-                                Forms\Components\Select::make('forum_id')
-                                    ->label('Fórum')
-                                    ->options(\App\Models\Forum::orderBy('id')->pluck('name', 'id'))
-                                    ->searchable(),
-                            ]),
-
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('lawyers')
-                                    ->label('Advogado(s)')
-                                    ->options(Lawyer::orderBy('name')->pluck('name', 'id'))
-                                    ->multiple()
-                                    ->searchable(),
-                                Forms\Components\TextInput::make('opponent_name')
-                                    ->label('Adverso')
-                                    ->maxLength(255),
-
-                                Forms\Components\Select::make('status')
-                                    ->label('Status')
-                                    ->options(
-                                        collect(\App\Enums\CaseStatus::cases())
-                                            ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
-                                    )
-                                    ->default('open')
-                                    ->required(),
-
-                                Forms\Components\Textarea::make('note')
-                                    ->label('Observações')
-                                    ->rows(3),
-                            ]),
-                    ])
-                    ->action(function (Enterprise $record, array $data) {
-                    $lawyers = $data['lawyers'] ?? [];
-                    unset($data['lawyers']);
-                
-                    $legalCase = $record->legalCases()->create([
-                        ...$data,
-                        'registered_by' => auth()->id(),
-                    ]);
-                
-                    if (!empty($lawyers)) {
-                        $legalCase->lawyers()->attach($lawyers);
-                    }
-                }),
-
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -251,16 +260,16 @@ class EnterpriseResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->withoutGlobalScope(SoftDeletingScope::class);
+            ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEnterprises::route('/'),
+            'index'  => Pages\ListEnterprises::route('/'),
             'create' => Pages\CreateEnterprise::route('/create'),
-            'view' => Pages\ViewEnterprise::route('/{record}'),
-            'edit' => Pages\EditEnterprise::route('/{record}/edit'),
+            'view'   => Pages\ViewEnterprise::route('/{record}'),
+            'edit'   => Pages\EditEnterprise::route('/{record}/edit'),
         ];
     }
 }
