@@ -14,6 +14,10 @@ class EnterpriseRepresentative extends Model
         'name',
         'gender',
         'position',
+        'cpf',
+        'rg',
+        'email',
+        'phone',
         'note',
     ];
 

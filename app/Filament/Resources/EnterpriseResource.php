@@ -211,6 +211,22 @@ class EnterpriseResource extends Resource
                                     Forms\Components\TextInput::make('position')
                                         ->label('Cargo / Função')
                                         ->maxLength(255),
+                                    Forms\Components\TextInput::make('cpf')
+                                        ->label('CPF')
+                                        ->mask('999.999.999-99')
+                                        ->maxLength(14),
+                                    Forms\Components\TextInput::make('rg')
+                                        ->label('RG')
+                                        ->mask('99.999.999-9')
+                                        ->maxLength(12),
+                                    Forms\Components\TextInput::make('email')
+                                        ->label('E-mail')
+                                        ->email()
+                                        ->maxLength(100),
+                                    Forms\Components\TextInput::make('phone')
+                                        ->label('Telefone / Celular')
+                                        ->mask('(99) 99999-9999')
+                                        ->maxLength(20),
                                     Forms\Components\Textarea::make('note')
                                         ->label('Observações')
                                         ->rows(2)
@@ -218,6 +234,8 @@ class EnterpriseResource extends Resource
                                 ])
                                 ->columns(2)
                                 ->addActionLabel('Adicionar Representante')
+                                ->deleteAction(fn($action) => $action->requiresConfirmation())
+                                ->collapsible()
                                 ->columnSpanFull(),
                         ]),
                 ])
@@ -392,8 +410,7 @@ class EnterpriseResource extends Resource
                         ->label('')
                         ->columns(3)
                         ->schema([
-                            TextEntry::make('name')
-                                ->label('Nome'),
+                            TextEntry::make('name')->label('Nome'),
                             TextEntry::make('gender')
                                 ->label('Gênero')
                                 ->formatStateUsing(fn ($state) => match($state) {
@@ -402,13 +419,13 @@ class EnterpriseResource extends Resource
                                     'other'  => 'Outro',
                                     default  => '—',
                                 }),
-                            TextEntry::make('position')
-                                ->label('Cargo / Função')
-                                ->placeholder('—'),
-                            TextEntry::make('note')
-                                ->label('Observações')
-                                ->placeholder('—')
-                                ->columnSpanFull(),
+                            TextEntry::make('position')->label('Cargo / Função')->placeholder('—'),
+                            TextEntry::make('cpf')->label('CPF')->placeholder('—'),
+                            TextEntry::make('rg')->label('RG')->placeholder('—'),
+                            TextEntry::make('email')->label('E-mail')->placeholder('—')
+                                ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                            TextEntry::make('phone')->label('Telefone / Celular')->placeholder('—'),
+                            TextEntry::make('note')->label('Observações')->placeholder('—')->columnSpanFull(),
                         ]),
                 ]),
         ]);
