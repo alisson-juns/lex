@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ClientResource\Pages;
 use App\Models\Client;
 use App\Models\ClientSpouse;
-use App\Models\ClientWard;
 use App\Enums\CaseStatus;
 use App\Models\CourtName;
 use App\Models\CourtNumber;
@@ -18,6 +17,10 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Leandrocfe\FilamentPtbrFormFields\Cep;
@@ -234,20 +237,10 @@ class ClientResource extends Resource
                         ->icon('heroicon-m-currency-dollar')
                         ->description('Informações bancárias do cliente')
                         ->schema([
-                            Forms\Components\Toggle::make('has_bank_accounts')
-                                ->label('Cliente possui contas bancárias?')
-                                ->live()
-                                ->dehydrated(false)
-                                ->afterStateHydrated(function ($component, $record) {
-                                    $component->state($record?->client_bank_accounts()->exists() ?? false);
-                                })
-                                ->afterStateUpdated(function ($state, $set) {
-                                    if (!$state) {
-                                        $set('client_bank_accounts', []);
-                                    }
-                                }),
                             Forms\Components\Repeater::make('client_bank_accounts')
                                 ->relationship('client_bank_accounts')
+                                ->label('Contas Bancárias')
+                                ->minItems(0)
                                 ->schema([
                                     Forms\Components\Grid::make(2)
                                         ->schema([
@@ -281,185 +274,193 @@ class ClientResource extends Resource
                                 ->addActionLabel('Adicionar conta bancária')
                                 ->deleteAction(fn($action) => $action->requiresConfirmation())
                                 ->reorderable()
-                                ->collapsible()
-                                ->visible(fn(callable $get) => $get('has_bank_accounts') === true),
-                        ]),
+                                ->collapsible(),
+                ]),
 
                     Step::make('Cônjuge')
-                        ->icon('heroicon-m-user-plus')
-                        ->description('Informações do cônjuge (se aplicável)')
-                        ->schema([
-                            Forms\Components\Toggle::make('has_spouse')
-                                ->label('Cliente possui cônjuge?')
-                                ->live()
-                                ->dehydrated(false)
-                                ->afterStateHydrated(function ($component, $record) {
-                                    $component->state($record?->spouse()->exists() ?? false);
-                                })
-                                ->afterStateUpdated(function ($state, $set) {
-                                    if (!$state) {
-                                        $set('spouse.name', null);
-                                        $set('spouse.cpf', null);
-                                        $set('spouse.rg', null);
-                                        $set('spouse.marital_status', null);
-                                        $set('spouse.father', null);
-                                        $set('spouse.mother', null);
-                                        $set('spouse.pis', null);
-                                        $set('spouse.ctps', null);
-                                        $set('spouse.profession', null);
-                                        $set('spouse.date_of_birth', null);
-                                        $set('spouse.place_of_birth', null);
-                                        $set('spouse.nationality', null);
-                                        $set('spouse.phone', null);
-                                        $set('spouse.mobile', null);
-                                        $set('spouse.email', null);
-                                        $set('spouse.note', null);
-                                    }
-                                }),
-                            Forms\Components\Group::make()
-                                ->relationship('spouse')
-                                ->schema([
-                                    Forms\Components\Section::make('Dados Pessoais')
-                                        ->schema([
-                                            Forms\Components\TextInput::make('name')
-                                                ->label('Nome completo')
-                                                ->required()
-                                                ->maxLength(255),
-                                            Forms\Components\DatePicker::make('date_of_birth')
-                                                ->label('Data de nascimento'),
-                                            Forms\Components\TextInput::make('father')
-                                                ->label('Pai')
-                                                ->maxLength(255),
-                                            Forms\Components\TextInput::make('mother')
-                                                ->label('Mãe')
-                                                ->maxLength(255),
-                                            Forms\Components\TextInput::make('place_of_birth')
-                                                ->label('Naturalidade')
-                                                ->maxLength(255),
-                                            Forms\Components\TextInput::make('nationality')
-                                                ->label('Nacionalidade')
-                                                ->maxLength(255),
-                                            Forms\Components\Select::make('marital_status')
-                                                ->options([
-                                                    'married' => 'Casado(a)',
-                                                    'divorced' => 'Divorciado(a)',
-                                                    'widowed' => 'Viúvo(a)',
-                                                ])
-                                                ->label('Estado civil'),
-                                            Forms\Components\TextInput::make('profession')
-                                                ->label('Profissão')
-                                                ->maxLength(255),
-                                        ])
-                                        ->columns(2),
-                                    Forms\Components\Section::make('Documentos')
-                                        ->schema([
-                                            Forms\Components\TextInput::make('cpf')
-                                                ->label('CPF')
-                                                ->mask('999.999.999-99')
-                                                ->maxLength(14)
-                                                ->rule('cpf')
-                                                ->unique(ClientSpouse::class, 'cpf', ignoreRecord: true)
-                                                ->validationMessages([
-                                                    'cpf' => 'Número de CPF inválido.',
-                                                    'unique' => 'Este CPF já foi registrado.',
-                                                ]),
-                                            Forms\Components\TextInput::make('rg')
-                                                ->label('RG')
-                                                ->mask('99.999.999-9')
-                                                ->maxLength(12),
-                                            Forms\Components\TextInput::make('pis')
-                                                ->label('PIS')
-                                                ->mask('999.99999.99-9')
-                                                ->rule('pis')
-                                                ->maxLength(14)
-                                                ->validationMessages([
-                                                    'pis' => 'Número de PIS inválido.',
-                                                ]),
-                                            Forms\Components\TextInput::make('ctps')
-                                                ->label('CTPS')
-                                                ->maxLength(20),
-                                        ])
-                                        ->columns(2),
-                                    Forms\Components\Section::make('Contatos')
-                                        ->schema([
-                                            Forms\Components\TextInput::make('email')
-                                                ->label('E-mail')
-                                                ->email()
-                                                ->maxLength(255),
-                                            Forms\Components\TextInput::make('mobile')
-                                                ->label('Celular')
-                                                ->mask('(99) 99999-9999')
-                                                ->maxLength(15),
-                                            Forms\Components\TextInput::make('phone')
-                                                ->label('Telefone')
-                                                ->mask('(99) 9999-9999')
-                                                ->maxLength(14),
-                                            Forms\Components\Textarea::make('note')
-                                                ->label('Observações')
-                                                ->rows(3)
-                                                ->columnSpanFull(),
-                                        ])
-                                        ->columns(2),
-                                ])
-                                ->visible(fn(callable $get) => $get('has_spouse') === true),
-                        ]),
+                       ->icon('heroicon-m-user-plus')
+                       ->description('Informações do cônjuge (se aplicável)')
+                       ->schema([
+                           Forms\Components\Hidden::make('_delete_spouse')
+                               ->default(0)
+                               ->dehydrated(true),
+
+                           Forms\Components\Toggle::make('has_spouse')
+                               ->label('Cliente possui cônjuge?')
+                               ->live()
+                               ->dehydrated(false)
+                               ->afterStateHydrated(function ($component, $record) {
+                                   $component->state($record?->spouse()->exists() ?? false);
+                               })
+                               ->afterStateUpdated(function ($state, $set) {
+                                   $set('_delete_spouse', $state ? 0 : 1);
+                                   if (!$state) {
+                                       $set('spouse.name', null);
+                                       $set('spouse.cpf', null);
+                                       $set('spouse.rg', null);
+                                       $set('spouse.marital_status', null);
+                                       $set('spouse.father', null);
+                                       $set('spouse.mother', null);
+                                       $set('spouse.pis', null);
+                                       $set('spouse.ctps', null);
+                                       $set('spouse.profession', null);
+                                       $set('spouse.date_of_birth', null);
+                                       $set('spouse.place_of_birth', null);
+                                       $set('spouse.nationality', null);
+                                       $set('spouse.phone', null);
+                                       $set('spouse.mobile', null);
+                                       $set('spouse.email', null);
+                                       $set('spouse.note', null);
+                                   }
+                               }),
+
+                           Forms\Components\Group::make()
+                               ->relationship('spouse')
+                               ->schema([
+                                   Forms\Components\Section::make('Dados Pessoais')
+                                       ->schema([
+                                           Forms\Components\TextInput::make('name')
+                                               ->label('Nome completo')
+                                               ->required()
+                                               ->maxLength(255),
+                                           Forms\Components\DatePicker::make('date_of_birth')
+                                               ->label('Data de nascimento'),
+                                           Forms\Components\TextInput::make('father')
+                                               ->label('Pai')
+                                               ->maxLength(255),
+                                           Forms\Components\TextInput::make('mother')
+                                               ->label('Mãe')
+                                               ->maxLength(255),
+                                           Forms\Components\TextInput::make('place_of_birth')
+                                               ->label('Naturalidade')
+                                               ->maxLength(255),
+                                           Forms\Components\TextInput::make('nationality')
+                                               ->label('Nacionalidade')
+                                               ->maxLength(255),
+                                           Forms\Components\Select::make('marital_status')
+                                               ->options([
+                                                   'married'  => 'Casado(a)',
+                                                   'divorced' => 'Divorciado(a)',
+                                                   'widowed'  => 'Viúvo(a)',
+                                               ])
+                                               ->label('Estado civil'),
+                                           Forms\Components\TextInput::make('profession')
+                                               ->label('Profissão')
+                                               ->maxLength(255),
+                                       ])
+                                       ->columns(2),
+                                   Forms\Components\Section::make('Documentos')
+                                       ->schema([
+                                           Forms\Components\TextInput::make('cpf')
+                                               ->label('CPF')
+                                               ->mask('999.999.999-99')
+                                               ->maxLength(14)
+                                               ->rule('cpf')
+                                               ->unique(ClientSpouse::class, 'cpf', ignoreRecord: true)
+                                               ->validationMessages([
+                                                   'cpf'    => 'Número de CPF inválido.',
+                                                   'unique' => 'Este CPF já foi registrado.',
+                                               ]),
+                                           Forms\Components\TextInput::make('rg')
+                                               ->label('RG')
+                                               ->mask('99.999.999-9')
+                                               ->maxLength(12),
+                                           Forms\Components\TextInput::make('pis')
+                                               ->label('PIS')
+                                               ->mask('999.99999.99-9')
+                                               ->rule('pis')
+                                               ->maxLength(14)
+                                               ->validationMessages([
+                                                   'pis' => 'Número de PIS inválido.',
+                                               ]),
+                                           Forms\Components\TextInput::make('ctps')
+                                               ->label('CTPS')
+                                               ->maxLength(20),
+                                       ])
+                                       ->columns(2),
+                                   Forms\Components\Section::make('Contatos')
+                                       ->schema([
+                                           Forms\Components\TextInput::make('email')
+                                               ->label('E-mail')
+                                               ->email()
+                                               ->maxLength(255),
+                                           Forms\Components\TextInput::make('mobile')
+                                               ->label('Celular')
+                                               ->mask('(99) 99999-9999')
+                                               ->maxLength(15),
+                                           Forms\Components\TextInput::make('phone')
+                                               ->label('Telefone')
+                                               ->mask('(99) 9999-9999')
+                                               ->maxLength(14),
+                                           Forms\Components\Textarea::make('note')
+                                               ->label('Observações')
+                                               ->rows(3)
+                                               ->columnSpanFull(),
+                                       ])
+                                       ->columns(2),
+                               ])
+                               ->visible(fn(callable $get) => $get('has_spouse') === true),
+                       ]),
 
                     Step::make('Dependentes')
-                        ->icon('heroicon-m-user-group')
-                        ->description('Filhos, tutelados e curatelados (se aplicável)')
-                        ->schema([
-                            Forms\Components\Toggle::make('has_wards')
-                                ->label('Cliente possui dependentes?')
-                                ->live()
-                                ->dehydrated(false)
-                                ->afterStateHydrated(function ($component, $record) {
-                                    $component->state($record?->wards()->exists() ?? false);
-                                })
-                                ->afterStateUpdated(function ($state, $set) {
-                                    if (!$state) {
-                                        $set('wards', []);
-                                    }
-                                }),
-                            Forms\Components\Repeater::make('wards')
-                                ->relationship('wards')
-                                ->schema([
-                                    Forms\Components\Grid::make(2)
-                                        ->schema([
-                                            Forms\Components\TextInput::make('name')
-                                                ->label('Nome completo')
-                                                ->required()
-                                                ->maxLength(255)
-                                                ->columnSpan(2),
-                                            Forms\Components\TextInput::make('cpf')
-                                                ->label('CPF')
-                                                ->mask('999.999.999-99')
-                                                ->maxLength(14)
-                                                ->rule('cpf')
-                                                ->unique('client_wards', 'cpf', ignoreRecord: true)
-                                                ->validationMessages([
-                                                    'cpf' => 'Número de CPF inválido.',
-                                                    'unique' => 'Este CPF já foi registrado.',
-                                                ]),
-                                            Forms\Components\TextInput::make('rg')
-                                                ->label('RG')
-                                                ->mask('99.999.999-9')
-                                                ->maxLength(12),
-                                            Forms\Components\DatePicker::make('date_of_birth')
-                                                ->label('Data de nascimento')
-                                                ->columnSpan(2),
-                                            Forms\Components\Textarea::make('note')
-                                                ->label('Observações')
-                                                ->rows(2)
-                                                ->columnSpan(2),
-                                        ]),
-                                ])
-                                ->itemLabel(fn(array $state): ?string => $state['name'] ?? 'Novo dependente')
-                                ->addActionLabel('Adicionar dependente')
-                                ->deleteAction(fn($action) => $action->requiresConfirmation())
-                                ->reorderable()
-                                ->collapsible()
-                                ->visible(fn(callable $get) => $get('has_wards') === true),
-                        ]),
+    ->icon('heroicon-m-user-group')
+    ->description('Filhos, tutelados e curatelados (se aplicável)')
+    ->schema([
+        Forms\Components\Repeater::make('wards')
+            ->label('Dependentes')
+            ->minItems(0)
+            ->defaultItems(0)
+            ->afterStateHydrated(function ($component, $record) {
+                if ($record) {
+                    $component->state(
+                        $record->wards->map(fn($w) => [
+                            'id'            => $w->id,
+                            'name'          => $w->name,
+                            'cpf'           => $w->cpf,
+                            'rg'            => $w->rg,
+                            'date_of_birth' => $w->date_of_birth?->format('Y-m-d'),
+                            'note'          => $w->note,
+                        ])->toArray()
+                    );
+                }
+            })
+            ->schema([
+                Forms\Components\Hidden::make('id'),
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nome completo')                   
+                            ->maxLength(255)
+                            ->columnSpan(2),
+                        Forms\Components\TextInput::make('cpf')
+                            ->label('CPF')
+                            ->mask('999.999.999-99')
+                            ->maxLength(14)
+                            ->rule('cpf')
+                            ->unique('client_wards', 'cpf', ignoreRecord: true)
+                            ->validationMessages([
+                                'cpf'    => 'Número de CPF inválido.',
+                                'unique' => 'Este CPF já foi registrado.',
+                            ]),
+                        Forms\Components\TextInput::make('rg')
+                            ->label('RG')
+                            ->mask('99.999.999-9')
+                            ->maxLength(12),
+                        Forms\Components\DatePicker::make('date_of_birth')
+                            ->label('Data de nascimento')
+                            ->columnSpan(2),
+                        Forms\Components\Textarea::make('note')
+                            ->label('Observações')
+                            ->rows(2)
+                            ->columnSpan(2),
+                    ]),
+            ])
+            ->itemLabel(fn(array $state): ?string => $state['name'] ?? 'Novo dependente')
+            ->addActionLabel('Adicionar dependente')
+            ->deleteAction(fn($action) => $action->requiresConfirmation())
+            ->reorderable()
+            ->collapsible(),
+    ]),
                 ])
                     ->skippable()
                     ->columnSpan('full'),
@@ -573,6 +574,274 @@ class ClientResource extends Resource
                 ]),
             ]);
     }
+
+    public static function infolist(Infolist $infolist): Infolist
+{
+    return $infolist
+        ->schema([
+            // ── Dados Pessoais ─────────────────────────────────────────
+            Section::make('Dados Pessoais')
+                ->icon('heroicon-m-user')
+                ->columns(3)
+                ->schema([
+                    TextEntry::make('name')
+                        ->label('Nome completo')
+                        ->columnSpanFull(),
+                    TextEntry::make('date_of_birth')
+                        ->label('Data de nascimento')
+                        ->date('d/m/Y')
+                        ->placeholder('—'),
+                    TextEntry::make('gender')
+                        ->label('Gênero')
+                        ->placeholder('—')
+                        ->formatStateUsing(fn ($state) => match($state) {
+                            'male'   => 'Masculino',
+                            'female' => 'Feminino',
+                            'other'  => 'Outro',
+                            default  => '—',
+                        }),
+                    TextEntry::make('marital_status')
+                        ->label('Estado civil')
+                        ->placeholder('—')
+                        ->formatStateUsing(fn ($state) => match($state) {
+                            'single'   => 'Solteiro(a)',
+                            'married'  => 'Casado(a)',
+                            'divorced' => 'Divorciado(a)',
+                            'widowed'  => 'Viúvo(a)',
+                            'separated'=> 'Separado(a)',
+                            default    => '—',
+                        }),
+                    TextEntry::make('profession')
+                        ->label('Profissão')
+                        ->placeholder('—'),
+                    TextEntry::make('nationality')
+                        ->label('Nacionalidade')
+                        ->placeholder('—'),
+                    TextEntry::make('place_of_birth')
+                        ->label('Naturalidade')
+                        ->placeholder('—'),
+                    TextEntry::make('father')
+                        ->label('Pai')
+                        ->placeholder('—'),
+                    TextEntry::make('mother')
+                        ->label('Mãe')
+                        ->placeholder('—'),
+                    TextEntry::make('note')
+                        ->label('Observações')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ]),
+
+            // ── Documentos ─────────────────────────────────────────────
+            Section::make('Documentos')
+                ->icon('heroicon-m-document-text')
+                ->columns(3)
+                ->relationship('client_documents')
+                ->schema([
+                    TextEntry::make('cpf')
+                        ->label('CPF')
+                        ->placeholder('—'),
+                    TextEntry::make('rg')
+                        ->label('RG')
+                        ->placeholder('—'),
+                    TextEntry::make('cnh')
+                        ->label('CNH')
+                        ->placeholder('—'),
+                    TextEntry::make('pis')
+                        ->label('PIS')
+                        ->placeholder('—'),
+                    TextEntry::make('ctps')
+                        ->label('CTPS')
+                        ->placeholder('—'),
+                    TextEntry::make('rnm')
+                        ->label('RNM')
+                        ->placeholder('—'),
+                    TextEntry::make('other_documents')
+                        ->label('Outros Documentos')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ]),
+
+            // ── Endereço ───────────────────────────────────────────────
+            Section::make('Endereço')
+                ->icon('heroicon-m-map-pin')
+                ->columns(3)
+                ->relationship('client_addresses')
+                ->schema([
+                    TextEntry::make('zipcode')
+                        ->label('CEP')
+                        ->placeholder('—'),
+                    TextEntry::make('street')
+                        ->label('Logradouro')
+                        ->placeholder('—'),
+                    TextEntry::make('number')
+                        ->label('Número')
+                        ->placeholder('—'),
+                    TextEntry::make('complement')
+                        ->label('Complemento')
+                        ->placeholder('—'),
+                    TextEntry::make('district')
+                        ->label('Bairro')
+                        ->placeholder('—'),
+                    TextEntry::make('city')
+                        ->label('Cidade')
+                        ->placeholder('—'),
+                    TextEntry::make('state')
+                        ->label('Estado')
+                        ->placeholder('—'),
+                ]),
+
+            // ── Contatos ───────────────────────────────────────────────
+            Section::make('Contatos')
+                ->icon('heroicon-m-phone')
+                ->columns(2)
+                ->relationship('client_contacts')
+                ->schema([
+                    TextEntry::make('email')
+                        ->label('E-mail')
+                        ->placeholder('—')
+                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                    TextEntry::make('optional_email')
+                        ->label('E-mail Alternativo')
+                        ->placeholder('—')
+                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                    TextEntry::make('cellphone')
+                        ->label('Celular')
+                        ->placeholder('—'),
+                    TextEntry::make('phone')
+                        ->label('Telefone Fixo')
+                        ->placeholder('—'),
+                    TextEntry::make('message_cell_phone')
+                        ->label('WhatsApp / Celular Recado')
+                        ->placeholder('—'),
+                    TextEntry::make('message_phone')
+                        ->label('Telefone Recado')
+                        ->placeholder('—'),
+                    TextEntry::make('note')
+                        ->label('Observações')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ]),
+
+            // ── Dados Bancários ────────────────────────────────────────
+            Section::make('Dados Bancários')
+                ->icon('heroicon-m-banknotes')
+                ->schema([
+                    RepeatableEntry::make('client_bank_accounts')
+                        ->label('')
+                        ->columns(4)
+                        ->schema([
+                            TextEntry::make('bank_number')
+                                ->label('Número do Banco')
+                                ->placeholder('—'),
+                            TextEntry::make('bank_name')
+                                ->label('Nome do Banco')
+                                ->placeholder('—'),
+                            TextEntry::make('agency')
+                                ->label('Agência')
+                                ->placeholder('—'),
+                            TextEntry::make('account')
+                                ->label('Conta')
+                                ->placeholder('—'),
+                        ]),
+                ]),
+
+            // ── Cônjuge ────────────────────────────────────────────────
+            Section::make('Cônjuge')
+                ->icon('heroicon-m-user-plus')
+                ->columns(3)
+                ->relationship('spouse')
+                ->hidden(fn ($record) => !$record?->spouse()->exists())
+                ->schema([
+                    TextEntry::make('name')
+                        ->label('Nome completo')
+                        ->columnSpanFull()
+                        ->placeholder('—'),
+                    TextEntry::make('date_of_birth')
+                        ->label('Data de nascimento')
+                        ->date('d/m/Y')
+                        ->placeholder('—'),
+                    TextEntry::make('marital_status')
+                        ->label('Estado civil')
+                        ->placeholder('—')
+                        ->formatStateUsing(fn ($state) => match($state) {
+                            'married'  => 'Casado(a)',
+                            'divorced' => 'Divorciado(a)',
+                            'widowed'  => 'Viúvo(a)',
+                            default    => '—',
+                        }),
+                    TextEntry::make('profession')
+                        ->label('Profissão')
+                        ->placeholder('—'),
+                    TextEntry::make('nationality')
+                        ->label('Nacionalidade')
+                        ->placeholder('—'),
+                    TextEntry::make('place_of_birth')
+                        ->label('Naturalidade')
+                        ->placeholder('—'),
+                    TextEntry::make('father')
+                        ->label('Pai')
+                        ->placeholder('—'),
+                    TextEntry::make('mother')
+                        ->label('Mãe')
+                        ->placeholder('—'),
+                    TextEntry::make('email')
+                        ->label('E-mail')
+                        ->placeholder('—')
+                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                    TextEntry::make('mobile')
+                        ->label('Celular')
+                        ->placeholder('—'),
+                    TextEntry::make('phone')
+                        ->label('Telefone')
+                        ->placeholder('—'),
+                    TextEntry::make('cpf')
+                        ->label('CPF')
+                        ->placeholder('—'),
+                    TextEntry::make('rg')
+                        ->label('RG')
+                        ->placeholder('—'),
+                    TextEntry::make('pis')
+                        ->label('PIS')
+                        ->placeholder('—'),
+                    TextEntry::make('ctps')
+                        ->label('CTPS')
+                        ->placeholder('—'),
+                    TextEntry::make('note')
+                        ->label('Observações')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ]),
+
+            // ── Dependentes ────────────────────────────────────────────
+            Section::make('Dependentes')
+                ->icon('heroicon-m-users')
+                ->hidden(fn ($record) => $record?->wards()->doesntExist())
+                ->schema([
+                    RepeatableEntry::make('wards')
+                        ->label('')
+                        ->columns(3)
+                        ->schema([
+                            TextEntry::make('name')
+                                ->label('Nome'),
+                            TextEntry::make('date_of_birth')
+                                ->label('Data de nascimento')
+                                ->date('d/m/Y')
+                                ->placeholder('—'),
+                            TextEntry::make('cpf')
+                                ->label('CPF')
+                                ->placeholder('—'),
+                            TextEntry::make('rg')
+                                ->label('RG')
+                                ->placeholder('—'),
+                            TextEntry::make('note')
+                                ->label('Observações')
+                                ->placeholder('—')
+                                ->columnSpanFull(),
+                        ]),
+                ]),
+        ]);
+}
 
     public static function getEloquentQuery(): Builder
     {
