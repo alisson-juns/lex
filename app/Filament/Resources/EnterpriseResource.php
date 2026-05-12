@@ -20,7 +20,6 @@ use Leandrocfe\FilamentPtbrFormFields\Cep;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-
 class EnterpriseResource extends Resource
 {
     protected static ?string $model = Enterprise::class;
@@ -34,6 +33,8 @@ class EnterpriseResource extends Resource
     {
         return [
             \App\Filament\Resources\EnterpriseResource\RelationManagers\LegalCasesRelationManager::class,
+            \App\Filament\Resources\EnterpriseResource\RelationManagers\LegalCasesRelationManager::class,
+            \App\Filament\Resources\EnterpriseResource\RelationManagers\EnterprisePowersOfAttorneyRelationManager::class,
         ];
     }
 
@@ -234,7 +235,7 @@ class EnterpriseResource extends Resource
                                 ])
                                 ->columns(2)
                                 ->addActionLabel('Adicionar Representante')
-                                ->deleteAction(fn($action) => $action->requiresConfirmation())
+                                ->deleteAction(fn ($action) => $action->requiresConfirmation())
                                 ->collapsible()
                                 ->columnSpanFull(),
                         ]),
@@ -281,155 +282,155 @@ class EnterpriseResource extends Resource
     }
 
     public static function infolist(Infolist $infolist): Infolist
-{
-    return $infolist
-        ->schema([
-            // ── Dados da Empresa ───────────────────────────────────────
-            Section::make('Dados da Empresa')
-                ->icon('heroicon-m-building-office')
-                ->columns(2)
-                ->schema([
-                    TextEntry::make('corporate_reason')
-                        ->label('Razão Social'),
-                    TextEntry::make('trade_name')
-                        ->label('Nome Fantasia')
-                        ->placeholder('—'),
-                    TextEntry::make('note')
-                        ->label('Observações')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
-                ]),
+    {
+        return $infolist
+            ->schema([
+                // ── Dados da Empresa ───────────────────────────────────────
+                Section::make('Dados da Empresa')
+                    ->icon('heroicon-m-building-office')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('corporate_reason')
+                            ->label('Razão Social'),
+                        TextEntry::make('trade_name')
+                            ->label('Nome Fantasia')
+                            ->placeholder('—'),
+                        TextEntry::make('note')
+                            ->label('Observações')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                    ]),
 
-            // ── Documentos ─────────────────────────────────────────────
-            Section::make('Documentos')
-                ->icon('heroicon-m-document-text')
-                ->columns(2)
-                ->relationship('enterprise_documents')
-                ->schema([
-                    TextEntry::make('cnpj')
-                        ->label('CNPJ')
-                        ->placeholder('—'),
-                    TextEntry::make('ie')
-                        ->label('Inscrição Estadual')
-                        ->placeholder('—'),
-                    TextEntry::make('im')
-                        ->label('Inscrição Municipal')
-                        ->placeholder('—'),
-                    TextEntry::make('other_documents')
-                        ->label('Outros Documentos')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
-                ]),
+                // ── Documentos ─────────────────────────────────────────────
+                Section::make('Documentos')
+                    ->icon('heroicon-m-document-text')
+                    ->columns(2)
+                    ->relationship('enterprise_documents')
+                    ->schema([
+                        TextEntry::make('cnpj')
+                            ->label('CNPJ')
+                            ->placeholder('—'),
+                        TextEntry::make('ie')
+                            ->label('Inscrição Estadual')
+                            ->placeholder('—'),
+                        TextEntry::make('im')
+                            ->label('Inscrição Municipal')
+                            ->placeholder('—'),
+                        TextEntry::make('other_documents')
+                            ->label('Outros Documentos')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                    ]),
 
-            // ── Endereço ───────────────────────────────────────────────
-            Section::make('Endereço')
-                ->icon('heroicon-m-map-pin')
-                ->columns(3)
-                ->relationship('enterprise_addresses')
-                ->schema([
-                    TextEntry::make('zipcode')
-                        ->label('CEP')
-                        ->placeholder('—'),
-                    TextEntry::make('street')
-                        ->label('Logradouro')
-                        ->placeholder('—'),
-                    TextEntry::make('number')
-                        ->label('Número')
-                        ->placeholder('—'),
-                    TextEntry::make('complement')
-                        ->label('Complemento')
-                        ->placeholder('—'),
-                    TextEntry::make('district')
-                        ->label('Bairro')
-                        ->placeholder('—'),
-                    TextEntry::make('city')
-                        ->label('Cidade')
-                        ->placeholder('—'),
-                    TextEntry::make('state')
-                        ->label('Estado')
-                        ->placeholder('—'),
-                ]),
+                // ── Endereço ───────────────────────────────────────────────
+                Section::make('Endereço')
+                    ->icon('heroicon-m-map-pin')
+                    ->columns(3)
+                    ->relationship('enterprise_addresses')
+                    ->schema([
+                        TextEntry::make('zipcode')
+                            ->label('CEP')
+                            ->placeholder('—'),
+                        TextEntry::make('street')
+                            ->label('Logradouro')
+                            ->placeholder('—'),
+                        TextEntry::make('number')
+                            ->label('Número')
+                            ->placeholder('—'),
+                        TextEntry::make('complement')
+                            ->label('Complemento')
+                            ->placeholder('—'),
+                        TextEntry::make('district')
+                            ->label('Bairro')
+                            ->placeholder('—'),
+                        TextEntry::make('city')
+                            ->label('Cidade')
+                            ->placeholder('—'),
+                        TextEntry::make('state')
+                            ->label('Estado')
+                            ->placeholder('—'),
+                    ]),
 
-            // ── Contatos ───────────────────────────────────────────────
-            Section::make('Contatos')
-                ->icon('heroicon-m-phone')
-                ->columns(2)
-                ->relationship('enterprise_contacts')
-                ->schema([
-                    TextEntry::make('email')
-                        ->label('E-mail')
-                        ->placeholder('—')
-                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
-                    TextEntry::make('optional_email')
-                        ->label('E-mail Alternativo')
-                        ->placeholder('—')
-                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
-                    TextEntry::make('cellphone')
-                        ->label('Celular')
-                        ->placeholder('—'),
-                    TextEntry::make('phone')
-                        ->label('Telefone Fixo')
-                        ->placeholder('—'),
-                    TextEntry::make('message_cell_phone')
-                        ->label('WhatsApp / Celular Recado')
-                        ->placeholder('—'),
-                    TextEntry::make('message_phone')
-                        ->label('Telefone Recado')
-                        ->placeholder('—'),
-                    TextEntry::make('note')
-                        ->label('Observações')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
-                ]),
+                // ── Contatos ───────────────────────────────────────────────
+                Section::make('Contatos')
+                    ->icon('heroicon-m-phone')
+                    ->columns(2)
+                    ->relationship('enterprise_contacts')
+                    ->schema([
+                        TextEntry::make('email')
+                            ->label('E-mail')
+                            ->placeholder('—')
+                            ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                        TextEntry::make('optional_email')
+                            ->label('E-mail Alternativo')
+                            ->placeholder('—')
+                            ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                        TextEntry::make('cellphone')
+                            ->label('Celular')
+                            ->placeholder('—'),
+                        TextEntry::make('phone')
+                            ->label('Telefone Fixo')
+                            ->placeholder('—'),
+                        TextEntry::make('message_cell_phone')
+                            ->label('WhatsApp / Celular Recado')
+                            ->placeholder('—'),
+                        TextEntry::make('message_phone')
+                            ->label('Telefone Recado')
+                            ->placeholder('—'),
+                        TextEntry::make('note')
+                            ->label('Observações')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                    ]),
 
-            // ── Dados Bancários ────────────────────────────────────────
-            Section::make('Dados Bancários')
-                ->icon('heroicon-m-banknotes')
-                ->columns(2)
-                ->relationship('enterprise_bank_accounts')
-                ->schema([
-                    TextEntry::make('bank_number')
-                        ->label('Número do Banco')
-                        ->placeholder('—'),
-                    TextEntry::make('bank_name')
-                        ->label('Nome do Banco')
-                        ->placeholder('—'),
-                    TextEntry::make('agency')
-                        ->label('Agência')
-                        ->placeholder('—'),
-                    TextEntry::make('account')
-                        ->label('Conta')
-                        ->placeholder('—'),
-                ]),
+                // ── Dados Bancários ────────────────────────────────────────
+                Section::make('Dados Bancários')
+                    ->icon('heroicon-m-banknotes')
+                    ->columns(2)
+                    ->relationship('enterprise_bank_accounts')
+                    ->schema([
+                        TextEntry::make('bank_number')
+                            ->label('Número do Banco')
+                            ->placeholder('—'),
+                        TextEntry::make('bank_name')
+                            ->label('Nome do Banco')
+                            ->placeholder('—'),
+                        TextEntry::make('agency')
+                            ->label('Agência')
+                            ->placeholder('—'),
+                        TextEntry::make('account')
+                            ->label('Conta')
+                            ->placeholder('—'),
+                    ]),
 
-            // ── Representantes ─────────────────────────────────────────
-            Section::make('Representantes')
-                ->icon('heroicon-m-users')
-                ->schema([
-                    RepeatableEntry::make('enterprise_representatives')
-                        ->label('')
-                        ->columns(3)
-                        ->schema([
-                            TextEntry::make('name')->label('Nome'),
-                            TextEntry::make('gender')
-                                ->label('Gênero')
-                                ->formatStateUsing(fn ($state) => match($state) {
-                                    'male'   => 'Masculino',
-                                    'female' => 'Feminino',
-                                    'other'  => 'Outro',
-                                    default  => '—',
-                                }),
-                            TextEntry::make('position')->label('Cargo / Função')->placeholder('—'),
-                            TextEntry::make('cpf')->label('CPF')->placeholder('—'),
-                            TextEntry::make('rg')->label('RG')->placeholder('—'),
-                            TextEntry::make('email')->label('E-mail')->placeholder('—')
-                                ->url(fn ($state) => $state ? "mailto:{$state}" : null),
-                            TextEntry::make('phone')->label('Telefone / Celular')->placeholder('—'),
-                            TextEntry::make('note')->label('Observações')->placeholder('—')->columnSpanFull(),
-                        ]),
-                ]),
-        ]);
-}
+                // ── Representantes ─────────────────────────────────────────
+                Section::make('Representantes')
+                    ->icon('heroicon-m-users')
+                    ->schema([
+                        RepeatableEntry::make('enterprise_representatives')
+                            ->label('')
+                            ->columns(3)
+                            ->schema([
+                                TextEntry::make('name')->label('Nome'),
+                                TextEntry::make('gender')
+                                    ->label('Gênero')
+                                    ->formatStateUsing(fn ($state) => match($state) {
+                                        'male'   => 'Masculino',
+                                        'female' => 'Feminino',
+                                        'other'  => 'Outro',
+                                        default  => '—',
+                                    }),
+                                TextEntry::make('position')->label('Cargo / Função')->placeholder('—'),
+                                TextEntry::make('cpf')->label('CPF')->placeholder('—'),
+                                TextEntry::make('rg')->label('RG')->placeholder('—'),
+                                TextEntry::make('email')->label('E-mail')->placeholder('—')
+                                    ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                                TextEntry::make('phone')->label('Telefone / Celular')->placeholder('—'),
+                                TextEntry::make('note')->label('Observações')->placeholder('—')->columnSpanFull(),
+                            ]),
+                    ]),
+            ]);
+    }
 
     public static function getEloquentQuery(): Builder
     {

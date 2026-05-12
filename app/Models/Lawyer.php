@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -75,5 +76,10 @@ class Lawyer extends Model
     public function powersOfAttorney(): BelongsToMany
     {
         return $this->belongsToMany(PowerOfAttorney::class, 'lawyer_power_of_attorney');
+    }
+
+    public function enterprisePowersOfAttorney(): BelongsToMany
+    {
+        return $this->belongsToMany(EnterprisePowerOfAttorney::class, 'enterprise_power_of_attorney_lawyer');
     }
 }
