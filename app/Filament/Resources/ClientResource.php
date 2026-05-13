@@ -266,13 +266,14 @@ class ClientResource extends Resource
                                                 ->placeholder('00000-0'),
                                         ]),
                                 ])
-                                ->itemLabel(fn(array $state): ?string =>
+                                ->itemLabel(
+                                    fn (array $state): ?string =>
                                     $state['bank_name']
                                         ? "{$state['bank_name']} - Ag: {$state['agency']}"
                                         : 'Nova conta bancária'
                                 )
                                 ->addActionLabel('Adicionar conta bancária')
-                                ->deleteAction(fn($action) => $action->requiresConfirmation())
+                                ->deleteAction(fn ($action) => $action->requiresConfirmation())
                                 ->reorderable()
                                 ->collapsible(),
                 ]),
@@ -399,7 +400,7 @@ class ClientResource extends Resource
                                        ])
                                        ->columns(2),
                                ])
-                               ->visible(fn(callable $get) => $get('has_spouse') === true),
+                               ->visible(fn (callable $get) => $get('has_spouse') === true),
                        ]),
 
                     Step::make('Dependentes')
@@ -413,7 +414,7 @@ class ClientResource extends Resource
             ->afterStateHydrated(function ($component, $record) {
                 if ($record) {
                     $component->state(
-                        $record->wards->map(fn($w) => [
+                        $record->wards->map(fn ($w) => [
                             'id'            => $w->id,
                             'name'          => $w->name,
                             'cpf'           => $w->cpf,
@@ -429,7 +430,7 @@ class ClientResource extends Resource
                 Forms\Components\Grid::make(2)
                     ->schema([
                         Forms\Components\TextInput::make('name')
-                            ->label('Nome completo')                   
+                            ->label('Nome completo')
                             ->maxLength(255)
                             ->columnSpan(2),
                         Forms\Components\TextInput::make('cpf')
@@ -455,9 +456,9 @@ class ClientResource extends Resource
                             ->columnSpan(2),
                     ]),
             ])
-            ->itemLabel(fn(array $state): ?string => $state['name'] ?? 'Novo dependente')
+            ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Novo dependente')
             ->addActionLabel('Adicionar dependente')
-            ->deleteAction(fn($action) => $action->requiresConfirmation())
+            ->deleteAction(fn ($action) => $action->requiresConfirmation())
             ->reorderable()
             ->collapsible(),
     ]),
@@ -549,299 +550,299 @@ class ClientResource extends Resource
                             ]),
                     ])
                     ->action(function (Client $record, array $data) {
-                    $lawyers = $data['lawyers'] ?? [];
-                    unset($data['lawyers']);
+                        $lawyers = $data['lawyers'] ?? [];
+                        unset($data['lawyers']);
 
-                    $legalCase = $record->legalCases()->create([
-                        ...$data,
-                        'registered_by' => auth()->id(),
-                    ]);
+                        $legalCase = $record->legalCases()->create([
+                            ...$data,
+                            'registered_by' => auth()->id(),
+                        ]);
 
-                    if (!empty($lawyers)) {
-                        $legalCase->lawyers()->attach($lawyers);
-                    }
-            })
+                        if (!empty($lawyers)) {
+                            $legalCase->lawyers()->attach($lawyers);
+                        }
+                    })
             ->successNotificationTitle('Processo inserido com sucesso'),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ]);
+                        Tables\Actions\BulkActionGroup::make([
+                            Tables\Actions\DeleteBulkAction::make(),
+                            Tables\Actions\ForceDeleteBulkAction::make(),
+                            Tables\Actions\RestoreBulkAction::make(),
+                        ]),
+                    ]);
     }
 
     public static function infolist(Infolist $infolist): Infolist
-{
-    return $infolist
-        ->schema([
-            // ── Dados Pessoais ─────────────────────────────────────────
-            Section::make('Dados Pessoais')
-                ->icon('heroicon-m-user')
-                ->columns(3)
-                ->schema([
-                    TextEntry::make('name')
-                        ->label('Nome completo')
-                        ->columnSpanFull(),
-                    TextEntry::make('date_of_birth')
-                        ->label('Data de nascimento')
-                        ->date('d/m/Y')
-                        ->placeholder('—'),
-                    TextEntry::make('gender')
-                        ->label('Gênero')
-                        ->placeholder('—')
-                        ->formatStateUsing(fn ($state) => match($state) {
-                            'male'   => 'Masculino',
-                            'female' => 'Feminino',
-                            'other'  => 'Outro',
-                            default  => '—',
-                        }),
-                    TextEntry::make('marital_status')
-                        ->label('Estado civil')
-                        ->placeholder('—')
-                        ->formatStateUsing(fn ($state) => match($state) {
-                            'single'   => 'Solteiro(a)',
-                            'married'  => 'Casado(a)',
-                            'divorced' => 'Divorciado(a)',
-                            'widowed'  => 'Viúvo(a)',
-                            'separated'=> 'Separado(a)',
-                            default    => '—',
-                        }),
-                    TextEntry::make('profession')
-                        ->label('Profissão')
-                        ->placeholder('—'),
-                    TextEntry::make('nationality')
-                        ->label('Nacionalidade')
-                        ->placeholder('—'),
-                    TextEntry::make('place_of_birth')
-                        ->label('Naturalidade')
-                        ->placeholder('—'),
-                    TextEntry::make('father')
-                        ->label('Pai')
-                        ->placeholder('—'),
-                    TextEntry::make('mother')
-                        ->label('Mãe')
-                        ->placeholder('—'),
-                    TextEntry::make('note')
-                        ->label('Observações')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
-                ]),
+    {
+        return $infolist
+            ->schema([
+                // ── Dados Pessoais ─────────────────────────────────────────
+                Section::make('Dados Pessoais')
+                    ->icon('heroicon-m-user')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('name')
+                            ->label('Nome completo')
+                            ->columnSpanFull(),
+                        TextEntry::make('date_of_birth')
+                            ->label('Data de nascimento')
+                            ->date('d/m/Y')
+                            ->placeholder('—'),
+                        TextEntry::make('gender')
+                            ->label('Gênero')
+                            ->placeholder('—')
+                            ->formatStateUsing(fn ($state) => match($state) {
+                                'male'   => 'Masculino',
+                                'female' => 'Feminino',
+                                'other'  => 'Outro',
+                                default  => '—',
+                            }),
+                        TextEntry::make('marital_status')
+                            ->label('Estado civil')
+                            ->placeholder('—')
+                            ->formatStateUsing(fn ($state) => match($state) {
+                                'single'   => 'Solteiro(a)',
+                                'married'  => 'Casado(a)',
+                                'divorced' => 'Divorciado(a)',
+                                'widowed'  => 'Viúvo(a)',
+                                'separated' => 'Separado(a)',
+                                default    => '—',
+                            }),
+                        TextEntry::make('profession')
+                            ->label('Profissão')
+                            ->placeholder('—'),
+                        TextEntry::make('nationality')
+                            ->label('Nacionalidade')
+                            ->placeholder('—'),
+                        TextEntry::make('place_of_birth')
+                            ->label('Naturalidade')
+                            ->placeholder('—'),
+                        TextEntry::make('father')
+                            ->label('Pai')
+                            ->placeholder('—'),
+                        TextEntry::make('mother')
+                            ->label('Mãe')
+                            ->placeholder('—'),
+                        TextEntry::make('note')
+                            ->label('Observações')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                    ]),
 
-            // ── Documentos ─────────────────────────────────────────────
-            Section::make('Documentos')
-                ->icon('heroicon-m-document-text')
-                ->columns(3)
-                ->relationship('client_documents')
-                ->schema([
+                // ── Documentos ─────────────────────────────────────────────
+                Section::make('Documentos')
+                    ->icon('heroicon-m-document-text')
+                    ->columns(3)
+                    ->relationship('client_documents')
+                    ->schema([
                     TextEntry::make('cpf')
-                        ->label('CPF')
-                        ->placeholder('—'),
+                            ->label('CPF')
+                            ->placeholder('—'),
                     TextEntry::make('rg')
-                        ->label('RG')
-                        ->placeholder('—'),
+                            ->label('RG')
+                            ->placeholder('—'),
                     TextEntry::make('cnh')
-                        ->label('CNH')
-                        ->placeholder('—'),
+                            ->label('CNH')
+                            ->placeholder('—'),
                     TextEntry::make('pis')
-                        ->label('PIS')
-                        ->placeholder('—'),
+                            ->label('PIS')
+                            ->placeholder('—'),
                     TextEntry::make('ctps')
-                        ->label('CTPS')
-                        ->placeholder('—'),
+                            ->label('CTPS')
+                            ->placeholder('—'),
                     TextEntry::make('rnm')
-                        ->label('RNM')
-                        ->placeholder('—'),
+                            ->label('RNM')
+                            ->placeholder('—'),
                     TextEntry::make('other_documents')
-                        ->label('Outros Documentos')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
+                            ->label('Outros Documentos')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                 ]),
 
-            // ── Endereço ───────────────────────────────────────────────
-            Section::make('Endereço')
-                ->icon('heroicon-m-map-pin')
-                ->columns(3)
-                ->relationship('client_addresses')
-                ->schema([
+                // ── Endereço ───────────────────────────────────────────────
+                Section::make('Endereço')
+                    ->icon('heroicon-m-map-pin')
+                    ->columns(3)
+                    ->relationship('client_addresses')
+                    ->schema([
                     TextEntry::make('zipcode')
-                        ->label('CEP')
-                        ->placeholder('—'),
+                            ->label('CEP')
+                            ->placeholder('—'),
                     TextEntry::make('street')
-                        ->label('Logradouro')
-                        ->placeholder('—'),
+                            ->label('Logradouro')
+                            ->placeholder('—'),
                     TextEntry::make('number')
-                        ->label('Número')
-                        ->placeholder('—'),
+                            ->label('Número')
+                            ->placeholder('—'),
                     TextEntry::make('complement')
-                        ->label('Complemento')
-                        ->placeholder('—'),
+                            ->label('Complemento')
+                            ->placeholder('—'),
                     TextEntry::make('district')
-                        ->label('Bairro')
-                        ->placeholder('—'),
+                            ->label('Bairro')
+                            ->placeholder('—'),
                     TextEntry::make('city')
-                        ->label('Cidade')
-                        ->placeholder('—'),
+                            ->label('Cidade')
+                            ->placeholder('—'),
                     TextEntry::make('state')
-                        ->label('Estado')
-                        ->placeholder('—'),
+                            ->label('Estado')
+                            ->placeholder('—'),
                 ]),
 
-            // ── Contatos ───────────────────────────────────────────────
-            Section::make('Contatos')
-                ->icon('heroicon-m-phone')
-                ->columns(2)
-                ->relationship('client_contacts')
-                ->schema([
+                // ── Contatos ───────────────────────────────────────────────
+                Section::make('Contatos')
+                    ->icon('heroicon-m-phone')
+                    ->columns(2)
+                    ->relationship('client_contacts')
+                    ->schema([
                     TextEntry::make('email')
-                        ->label('E-mail')
-                        ->placeholder('—')
-                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                            ->label('E-mail')
+                            ->placeholder('—')
+                            ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                     TextEntry::make('optional_email')
-                        ->label('E-mail Alternativo')
-                        ->placeholder('—')
-                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                            ->label('E-mail Alternativo')
+                            ->placeholder('—')
+                            ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                     TextEntry::make('cellphone')
-                        ->label('Celular')
-                        ->placeholder('—'),
+                            ->label('Celular')
+                            ->placeholder('—'),
                     TextEntry::make('phone')
-                        ->label('Telefone Fixo')
-                        ->placeholder('—'),
+                            ->label('Telefone Fixo')
+                            ->placeholder('—'),
                     TextEntry::make('message_cell_phone')
-                        ->label('WhatsApp / Celular Recado')
-                        ->placeholder('—'),
+                            ->label('WhatsApp / Celular Recado')
+                            ->placeholder('—'),
                     TextEntry::make('message_phone')
-                        ->label('Telefone Recado')
-                        ->placeholder('—'),
+                            ->label('Telefone Recado')
+                            ->placeholder('—'),
                     TextEntry::make('note')
-                        ->label('Observações')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
+                            ->label('Observações')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                 ]),
 
-            // ── Dados Bancários ────────────────────────────────────────
-            Section::make('Dados Bancários')
-                ->icon('heroicon-m-banknotes')
-                ->schema([
+                // ── Dados Bancários ────────────────────────────────────────
+                Section::make('Dados Bancários')
+                    ->icon('heroicon-m-banknotes')
+                    ->schema([
                     RepeatableEntry::make('client_bank_accounts')
-                        ->label('')
-                        ->columns(4)
-                        ->schema([
-                            TextEntry::make('bank_number')
-                                ->label('Número do Banco')
-                                ->placeholder('—'),
-                            TextEntry::make('bank_name')
-                                ->label('Nome do Banco')
-                                ->placeholder('—'),
-                            TextEntry::make('agency')
-                                ->label('Agência')
-                                ->placeholder('—'),
-                            TextEntry::make('account')
-                                ->label('Conta')
-                                ->placeholder('—'),
-                        ]),
+                            ->label('')
+                            ->columns(4)
+                            ->schema([
+                                TextEntry::make('bank_number')
+                                    ->label('Número do Banco')
+                                    ->placeholder('—'),
+                                TextEntry::make('bank_name')
+                                    ->label('Nome do Banco')
+                                    ->placeholder('—'),
+                                TextEntry::make('agency')
+                                    ->label('Agência')
+                                    ->placeholder('—'),
+                                TextEntry::make('account')
+                                    ->label('Conta')
+                                    ->placeholder('—'),
+                            ]),
                 ]),
 
-            // ── Cônjuge ────────────────────────────────────────────────
-            Section::make('Cônjuge')
-                ->icon('heroicon-m-user-plus')
-                ->columns(3)
-                ->relationship('spouse')
-                ->hidden(fn ($record) => !$record?->spouse()->exists())
-                ->schema([
+                // ── Cônjuge ────────────────────────────────────────────────
+                Section::make('Cônjuge')
+                    ->icon('heroicon-m-user-plus')
+                    ->columns(3)
+                    ->relationship('spouse')
+                    ->hidden(fn ($record) => !$record?->spouse()->exists())
+                    ->schema([
                     TextEntry::make('name')
-                        ->label('Nome completo')
-                        ->columnSpanFull()
-                        ->placeholder('—'),
+                            ->label('Nome completo')
+                            ->columnSpanFull()
+                            ->placeholder('—'),
                     TextEntry::make('date_of_birth')
-                        ->label('Data de nascimento')
-                        ->date('d/m/Y')
-                        ->placeholder('—'),
+                            ->label('Data de nascimento')
+                            ->date('d/m/Y')
+                            ->placeholder('—'),
                     TextEntry::make('marital_status')
-                        ->label('Estado civil')
-                        ->placeholder('—')
-                        ->formatStateUsing(fn ($state) => match($state) {
-                            'married'  => 'Casado(a)',
-                            'divorced' => 'Divorciado(a)',
-                            'widowed'  => 'Viúvo(a)',
-                            default    => '—',
-                        }),
+                            ->label('Estado civil')
+                            ->placeholder('—')
+                            ->formatStateUsing(fn ($state) => match($state) {
+                                'married'  => 'Casado(a)',
+                                'divorced' => 'Divorciado(a)',
+                                'widowed'  => 'Viúvo(a)',
+                                default    => '—',
+                            }),
                     TextEntry::make('profession')
-                        ->label('Profissão')
-                        ->placeholder('—'),
+                            ->label('Profissão')
+                            ->placeholder('—'),
                     TextEntry::make('nationality')
-                        ->label('Nacionalidade')
-                        ->placeholder('—'),
+                            ->label('Nacionalidade')
+                            ->placeholder('—'),
                     TextEntry::make('place_of_birth')
-                        ->label('Naturalidade')
-                        ->placeholder('—'),
+                            ->label('Naturalidade')
+                            ->placeholder('—'),
                     TextEntry::make('father')
-                        ->label('Pai')
-                        ->placeholder('—'),
+                            ->label('Pai')
+                            ->placeholder('—'),
                     TextEntry::make('mother')
-                        ->label('Mãe')
-                        ->placeholder('—'),
+                            ->label('Mãe')
+                            ->placeholder('—'),
                     TextEntry::make('email')
-                        ->label('E-mail')
-                        ->placeholder('—')
-                        ->url(fn ($state) => $state ? "mailto:{$state}" : null),
+                            ->label('E-mail')
+                            ->placeholder('—')
+                            ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                     TextEntry::make('mobile')
-                        ->label('Celular')
-                        ->placeholder('—'),
+                            ->label('Celular')
+                            ->placeholder('—'),
                     TextEntry::make('phone')
-                        ->label('Telefone')
-                        ->placeholder('—'),
+                            ->label('Telefone')
+                            ->placeholder('—'),
                     TextEntry::make('cpf')
-                        ->label('CPF')
-                        ->placeholder('—'),
+                            ->label('CPF')
+                            ->placeholder('—'),
                     TextEntry::make('rg')
-                        ->label('RG')
-                        ->placeholder('—'),
+                            ->label('RG')
+                            ->placeholder('—'),
                     TextEntry::make('pis')
-                        ->label('PIS')
-                        ->placeholder('—'),
+                            ->label('PIS')
+                            ->placeholder('—'),
                     TextEntry::make('ctps')
-                        ->label('CTPS')
-                        ->placeholder('—'),
+                            ->label('CTPS')
+                            ->placeholder('—'),
                     TextEntry::make('note')
-                        ->label('Observações')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
+                            ->label('Observações')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                 ]),
 
-            // ── Dependentes ────────────────────────────────────────────
-            Section::make('Dependentes')
-                ->icon('heroicon-m-users')
-                ->hidden(fn ($record) => $record?->wards()->doesntExist())
-                ->schema([
+                // ── Dependentes ────────────────────────────────────────────
+                Section::make('Dependentes')
+                    ->icon('heroicon-m-users')
+                    ->hidden(fn ($record) => $record?->wards()->doesntExist())
+                    ->schema([
                     RepeatableEntry::make('wards')
-                        ->label('')
-                        ->columns(3)
-                        ->schema([
-                            TextEntry::make('name')
-                                ->label('Nome'),
-                            TextEntry::make('date_of_birth')
-                                ->label('Data de nascimento')
-                                ->date('d/m/Y')
-                                ->placeholder('—'),
-                            TextEntry::make('cpf')
-                                ->label('CPF')
-                                ->placeholder('—'),
-                            TextEntry::make('rg')
-                                ->label('RG')
-                                ->placeholder('—'),
-                            TextEntry::make('note')
-                                ->label('Observações')
-                                ->placeholder('—')
-                                ->columnSpanFull(),
-                        ]),
+                            ->label('')
+                            ->columns(3)
+                            ->schema([
+                                TextEntry::make('name')
+                                    ->label('Nome'),
+                                TextEntry::make('date_of_birth')
+                                    ->label('Data de nascimento')
+                                    ->date('d/m/Y')
+                                    ->placeholder('—'),
+                                TextEntry::make('cpf')
+                                    ->label('CPF')
+                                    ->placeholder('—'),
+                                TextEntry::make('rg')
+                                    ->label('RG')
+                                    ->placeholder('—'),
+                                TextEntry::make('note')
+                                    ->label('Observações')
+                                    ->placeholder('—')
+                                    ->columnSpanFull(),
+                            ]),
                 ]),
-        ]);
-}
+            ]);
+    }
 
     public static function getEloquentQuery(): Builder
     {

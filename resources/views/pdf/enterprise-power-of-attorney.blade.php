@@ -19,31 +19,12 @@
             max-width: 100%;
             max-height: 120px;
         }
-        h2 {
-            text-align: center;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-        }
         .content {
             text-align: justify;
             line-height: 1.7;
         }
         .content p {
             margin-bottom: 12px;
-        }
-        .city-date {
-            text-align: center;
-            margin-top: 30px;
-        }
-        .signature {
-            width: 50%;
-            margin: 40px auto 0;
-            border-top: 1px solid #111;
-            text-align: center;
-            padding-top: 6px;
-            font-size: 11px;
         }
         .footer {
             position: fixed;
@@ -65,7 +46,6 @@
             border: 1px solid #333;
             padding: 4px 8px;
         }
-
     </style>
 </head>
 <body>
@@ -80,17 +60,8 @@
         </div>
     @endif
 
-    <h2>Procuração</h2>
-
     <div class="content">
         {!! $body !!}
-
-        <p class="city-date">{{ $firmCity }}, {{ $currentDate }}.</p>
-
-        <div class="signature">
-    {{ $rep->name ?? '' }}<br>
-    <small>{{ $rep->position ?? '' }}{{ $rep->cpf ? ' — CPF: ' . $rep->cpf : '' }}</small>
-        </div>
     </div>
 </body>
 </html>

@@ -41,29 +41,37 @@ class EnterprisePowerOfAttorneyService
             : ($settings->firm_lawyers ?? '');
 
         $values = [
-            'enterprise_name'        => $enterprise->corporate_reason ?? '',
-            'enterprise_cnpj'        => $enterprise->enterprise_documents?->cnpj ?? '',
-            'enterprise_address'     => $address,
-            'enterprise_email'       => $enterprise->enterprise_contacts?->email ?? '',
-            'representative_name'    => $rep->name ?? '',
-            'representative_cpf'     => $rep->cpf ?? '',
+            'enterprise_name'         => $enterprise->corporate_reason ?? '',
+            'enterprise_cnpj'         => $enterprise->enterprise_documents?->cnpj ?? '',
+            'enterprise_address'      => $address,
+            'enterprise_email'        => $enterprise->enterprise_contacts?->email ?? '',
+            'representative_name'     => $rep->name ?? '',
+            'representative_cpf'      => $rep->cpf ?? '',
             'representative_position' => $rep->position ?? '',
-            'firm_lawyers'           => $firmLawyers,
-            'specific_text'          => $poa->specific_text,
+            'firm_lawyers'            => $firmLawyers,
+            'specific_text'           => $poa->specific_text,
+            'city_date'               => ($settings->firm_city ?? '') . ', ' . now()->translatedFormat('d \d\e F \d\e Y'),
         ];
 
         $body = html_entity_decode($poa->template->body_text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-        return preg_replace_callback(
+        // Resolve placeholders no formato de span (data-placeholder="key")
+        $body = preg_replace_callback(
             '/<span[^>]*data-placeholder="([^"]+)"[^>]*>.*?<\/span>/s',
             fn (array $matches) => $values[$matches[1]] ?? $matches[0],
             $body
         );
+
+        // Resolve placeholders no formato {{key}} (templates mais simples)
+        foreach ($values as $key => $value) {
+            $body = str_replace('{{' . $key . '}}', $value, $body);
+        }
+
+        return $body;
     }
 
     public function generate(EnterprisePowerOfAttorney $poa): string
     {
-        $poa->load(['enterprise', 'representative']);
         $html = $poa->rendered_body ?? $this->render($poa);
         $firm = FirmSetting::instance();
 
@@ -73,16 +81,10 @@ class EnterprisePowerOfAttorneyService
             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(\Storage::disk('public')->get($firm->firm_logo));
         }
 
-        $rep = $poa->representative;
-
         $pdf = Pdf::loadView('pdf.enterprise-power-of-attorney', [
-            'body'        => $html,
-            'firm'        => $firm,
-            'firmCity'    => $firm->firm_city ?? '',
-            'currentDate' => now()->translatedFormat('d \d\e F \d\e Y'),
-            'enterprise'  => $poa->enterprise,
-            'rep'         => $rep,
-            'logoBase64'  => $logoBase64,
+            'body'       => $html,
+            'firm'       => $firm,
+            'logoBase64' => $logoBase64,
         ])->setPaper('a4');
 
         $path = 'procuracoes/empresa/procuracao-empresa-' . $poa->id . '.pdf';

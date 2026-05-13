@@ -18,6 +18,7 @@
                 'E-mail'                   => 'client_email',
                 'Advogados do Escritório'  => 'firm_lawyers',
                 'Fim Específico'           => 'specific_text',
+                'Cidade e Data'            => 'city_date',
             ];
         @endphp
 
@@ -33,83 +34,131 @@
                 {{ $label }}
             </button>
         @endforeach
+
+        <button
+            type="button"
+            onclick="insertTitulo()"
+            class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium
+                   bg-amber-50 text-amber-700 border border-amber-200
+                   hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-300
+                   dark:border-amber-700 dark:hover:bg-amber-800 transition"
+        >
+            ↑ Título (PROCURAÇÃO)
+        </button>
+
+        <button
+            type="button"
+            onclick="insertAssinatura()"
+            class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium
+                   bg-amber-50 text-amber-700 border border-amber-200
+                   hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-300
+                   dark:border-amber-700 dark:hover:bg-amber-800 transition"
+        >
+            ✍ Bloco de Assinatura
+        </button>
     </div>
-</div>
 
-@verbatim
-<script>
-    const placeholderMap = {
-        'client_name':          'Nome do Cliente',
-        'client_nationality':   'Nacionalidade',
-        'client_marital_status':'Estado Civil',
-        'client_profession':    'Profissão',
-        'client_rg':            'RG',
-        'client_cpf':           'CPF',
-        'client_mother':        'Nome da Mãe',
-        'client_father':        'Nome do Pai',
-        'client_date_of_birth': 'Data de Nascimento',
-        'client_address':       'Endereço Completo',
-        'client_email':         'E-mail',
-        'firm_lawyers':         'Advogados do Escritório',
-        'specific_text':        'Fim Específico',
-    };
+    @verbatim
+    <script>
+        const placeholderMap = {
+            'client_name':          'Nome do Cliente',
+            'client_nationality':   'Nacionalidade',
+            'client_marital_status':'Estado Civil',
+            'client_profession':    'Profissão',
+            'client_rg':            'RG',
+            'client_cpf':           'CPF',
+            'client_mother':        'Nome da Mãe',
+            'client_father':        'Nome do Pai',
+            'client_date_of_birth': 'Data de Nascimento',
+            'client_address':       'Endereço Completo',
+            'client_email':         'E-mail',
+            'firm_lawyers':         'Advogados do Escritório',
+            'specific_text':        'Fim Específico',
+            'city_date':            'Cidade e Data',
+        };
 
-    function chipHtml(key, label) {
-        return '<span contenteditable="false" data-placeholder="' + key + '" ' +
-               'style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;' +
-               'border-radius:4px;padding:1px 7px;font-size:0.85em;' +
-               'display:inline-block;white-space:nowrap;">' +
-               label + '</span>';
-    }
-
-    function insertPlaceholder(key, label) {
-        if (typeof tinymce === 'undefined' || !tinymce.activeEditor) {
-            alert('Clique no editor de texto antes de inserir um campo.');
-            return;
+        function chipHtml(key, label) {
+            return '<span contenteditable="false" data-placeholder="' + key + '" ' +
+                   'style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;' +
+                   'border-radius:4px;padding:1px 7px;font-size:0.85em;' +
+                   'display:inline-block;white-space:nowrap;">' +
+                   label + '</span>';
         }
-        tinymce.activeEditor.focus();
-        tinymce.activeEditor.insertContent(chipHtml(key, label) + '&nbsp;');
-    }
 
-    function convertToChips(editor) {
-        let content = editor.getContent();
-        let changed = false;
-        for (const [key, label] of Object.entries(placeholderMap)) {
-            const raw = '{{' + key + '}}';
-            if (content.includes(raw)) {
-                content = content.split(raw).join(chipHtml(key, label));
-                changed = true;
+        function insertPlaceholder(key, label) {
+            if (typeof tinymce === 'undefined' || !tinymce.activeEditor) {
+                alert('Clique no editor de texto antes de inserir um campo.');
+                return;
+            }
+            tinymce.activeEditor.focus();
+            tinymce.activeEditor.insertContent(chipHtml(key, label) + '&nbsp;');
+        }
+
+        function insertTitulo() {
+            if (typeof tinymce === 'undefined' || !tinymce.activeEditor) {
+                alert('Clique no editor de texto antes de inserir um campo.');
+                return;
+            }
+            tinymce.activeEditor.focus();
+            tinymce.activeEditor.insertContent(
+                '<h2 style="text-align:center;text-transform:uppercase;letter-spacing:1px;">Procuração</h2>'
+            );
+        }
+
+        function insertAssinatura() {
+            if (typeof tinymce === 'undefined' || !tinymce.activeEditor) {
+                alert('Clique no editor de texto antes de inserir um campo.');
+                return;
+            }
+            tinymce.activeEditor.focus();
+            tinymce.activeEditor.insertContent(
+                '<p style="text-align:center;">' + chipHtml('city_date', 'Cidade e Data') + '</p>' +
+                '<div style="width:50%;margin:40px auto 0;border-top:1px solid #111;' +
+                'text-align:center;padding-top:6px;font-size:11px;">' +
+                chipHtml('client_name', 'Nome do Cliente') +
+                '</div>'
+            );
+        }
+
+        function convertToChips(editor) {
+            let content = editor.getContent();
+            let changed = false;
+            for (const [key, label] of Object.entries(placeholderMap)) {
+                const raw = '{{' + key + '}}';
+                if (content.includes(raw)) {
+                    content = content.split(raw).join(chipHtml(key, label));
+                    changed = true;
+                }
+            }
+            if (changed) {
+                editor.setContent(content);
             }
         }
-        if (changed) {
-            editor.setContent(content);
-        }
-    }
 
-    function waitForTinyMCE(attempts) {
-        attempts = attempts || 0;
-        if (attempts > 20) return;
+        function waitForTinyMCE(attempts) {
+            attempts = attempts || 0;
+            if (attempts > 20) return;
 
-        if (typeof tinymce !== 'undefined') {
-            tinymce.get().forEach(function(editor) {
-                convertToChips(editor);
-            });
-            tinymce.on('AddEditor', function(e) {
-                e.editor.on('init', function() {
-                    convertToChips(e.editor);
+            if (typeof tinymce !== 'undefined') {
+                tinymce.get().forEach(function(editor) {
+                    convertToChips(editor);
                 });
-            });
-        } else {
-            setTimeout(function() { waitForTinyMCE(attempts + 1); }, 500);
+                tinymce.on('AddEditor', function(e) {
+                    e.editor.on('init', function() {
+                        convertToChips(e.editor);
+                    });
+                });
+            } else {
+                setTimeout(function() { waitForTinyMCE(attempts + 1); }, 500);
+            }
         }
-    }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        waitForTinyMCE();
-    });
+        document.addEventListener('DOMContentLoaded', function() {
+            waitForTinyMCE();
+        });
 
-    document.addEventListener('livewire:navigated', function() {
-        waitForTinyMCE();
-    });
-</script>
-@endverbatim
+        document.addEventListener('livewire:navigated', function() {
+            waitForTinyMCE();
+        });
+    </script>
+    @endverbatim
