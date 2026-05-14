@@ -12,7 +12,7 @@
             padding: 0;
         }
         .header {
-            text-align: center;
+            text-align: {{ $firm->firm_logo_position ?? 'center' }};
             margin-bottom: 20px;
         }
         .header img {

@@ -17,6 +17,7 @@ class FirmSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static ?string $navigationIcon  = 'heroicon-o-building-office';
+    protected static ?string $title = 'Configurações do Escritório';
     protected static ?string $navigationLabel = 'Configurações do Escritório';
     protected static ?string $navigationGroup = 'Configurações';
     protected static ?int    $navigationSort  = 99;
@@ -66,14 +67,81 @@ class FirmSettings extends Page implements HasForms
 
                 Forms\Components\Section::make('Logo')
                     ->schema([
-                        Forms\Components\FileUpload::make('firm_logo')
-                            ->label('Logo do Escritório')
-                            ->image()
-                            ->disk('public')
-                            ->directory('firm-logo')
-                            ->imagePreviewHeight('120')
-                            ->columnSpanFull(),
-                    ]),
+                        Forms\Components\Placeholder::make('logo_preview')
+                            ->label('Logo atual')
+                            ->content(function () {
+                                $logo = FirmSetting::instance()->firm_logo;
+                                if (!$logo) {
+                                    return 'Nenhum logo cadastrado.';
+                                }
+                                $url = \Storage::disk('public')->url($logo);
+                                return new \Illuminate\Support\HtmlString(
+                                    "<img src='{$url}' style='max-height:100px;'>"
+                                );
+                            })
+                            ->columnSpan(2),
+
+                        Forms\Components\Select::make('firm_logo_position')
+                            ->label('Posição do Logo')
+                            ->options([
+                                'left'   => 'Esquerda',
+                                'center' => 'Centro',
+                                'right'  => 'Direita',
+                            ])
+                            ->default('center')
+                            ->required()
+                            ->columnSpan(1),
+
+                        Forms\Components\Actions::make([
+                            Forms\Components\Actions\Action::make('upload_logo')
+                                ->label('Alterar Logo')
+                                ->icon('heroicon-o-photo')
+                                ->form([
+                                    Forms\Components\FileUpload::make('firm_logo')
+                                        ->label('Logo do Escritório')
+                                        ->image()
+                                        ->disk('public')
+                                        ->directory('firm-logo')
+                                        ->imagePreviewHeight('120')
+                                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp']),
+                                ])
+                                ->action(function (array $data) {
+                                    if (empty($data['firm_logo'])) {
+                                        return;
+                                    }
+
+                                    $setting    = FirmSetting::instance();
+                                    $sourcePath = \Storage::disk('public')->path($data['firm_logo']);
+                                    $mime       = mime_content_type($sourcePath);
+
+                                    $source = match ($mime) {
+                                        'image/jpeg'  => imagecreatefromjpeg($sourcePath),
+                                        'image/png'   => imagecreatefrompng($sourcePath),
+                                        'image/gif'   => imagecreatefromgif($sourcePath),
+                                        'image/webp'  => imagecreatefromwebp($sourcePath),
+                                        'image/bmp',
+                                        'image/x-bmp' => imagecreatefrombmp($sourcePath),
+                                        default       => null,
+                                    };
+
+                                    if ($source) {
+                                        $pngFilename = 'firm-logo/' . uniqid('logo_') . '.png';
+                                        $pngPath     = \Storage::disk('public')->path($pngFilename);
+
+                                        imagepng($source, $pngPath);
+                                        imagedestroy($source);
+
+                                        if ($mime !== 'image/png') {
+                                            \Storage::disk('public')->delete($data['firm_logo']);
+                                        }
+
+                                        $setting->update(['firm_logo' => $pngFilename]);
+                                    }
+
+                                    Notification::make()->title('Logo atualizado!')->success()->send();
+                                }),
+                        ])->columnSpanFull(),
+                    ])->columns(3),
 
                 Forms\Components\Section::make('Advogados')
                     ->description('Texto que aparecerá na procuração onde estão os dados dos advogados. Use HTML se necessário.')
@@ -84,12 +152,10 @@ class FirmSettings extends Page implements HasForms
                             ->columnSpanFull(),
                     ]),
 
-                // ── Feriados ──────────────────────────────────────
                 Forms\Components\Section::make('Feriados no Calendário')
                     ->description('Feriados nacionais são exibidos automaticamente. Configure abaixo os feriados estaduais e municipais.')
                     ->icon('heroicon-o-calendar-days')
                     ->schema([
-
                         Forms\Components\Select::make('holiday_states')
                             ->label('Estados')
                             ->options([
@@ -123,7 +189,7 @@ class FirmSettings extends Page implements HasForms
                             ])
                             ->multiple()
                             ->searchable()
-                            ->live()                          // ← ao mudar estados, atualiza lista de municípios
+                            ->live()
                             ->placeholder('Selecione os estados...')
                             ->helperText('Feriados estaduais dos estados selecionados serão exibidos no calendário.')
                             ->columnSpanFull(),
@@ -135,13 +201,13 @@ class FirmSettings extends Page implements HasForms
                             ))
                             ->multiple()
                             ->searchable()
-                            ->placeholder(fn (Get $get) => empty($get('holiday_states'))
-                                ? 'Selecione ao menos um estado primeiro...'
-                                : 'Selecione os municípios...'
+                            ->placeholder(
+                                fn (Get $get) => empty($get('holiday_states'))
+                                    ? 'Selecione ao menos um estado primeiro...'
+                                    : 'Selecione os municípios...'
                             )
-                            ->helperText('Lista filtrada pelos estados selecionados acima. Requer storage/app/feriados/municipios.json.')
+                            ->helperText('Lista filtrada pelos estados selecionados acima.')
                             ->columnSpanFull(),
-
                     ]),
             ])
             ->statePath('data');
