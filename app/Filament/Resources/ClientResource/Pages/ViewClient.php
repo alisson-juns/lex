@@ -2,15 +2,17 @@
 
 namespace App\Filament\Resources\ClientResource\Pages;
 
+use App\Models\FeeAgreement;
+use App\Models\FeeAgreementTemplate;
 use App\Models\PowerOfAttorney;
 use App\Models\PowerOfAttorneyTemplate;
-use App\Services\PowerOfAttorneyService;
 use App\Models\Lawyer;
+use App\Services\FeeAgreementService;
+use App\Services\PowerOfAttorneyService;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Resources\Pages\ViewRecord;
-
 
 class ViewClient extends ViewRecord
 {
@@ -70,6 +72,52 @@ class ViewClient extends ViewRecord
                 })
                 ->modalHeading('Gerar Procuração')
                 ->modalSubmitActionLabel('Continuar →'),
-                    ];
+
+            Action::make('gerarContrato')
+                ->label('Gerar Contrato')
+                ->icon('heroicon-o-document-check')
+                ->color('warning')
+                ->form([
+                    Forms\Components\Select::make('fee_agreement_template_id')
+                        ->label('Tipo de Contrato')
+                        ->options(
+                            FeeAgreementTemplate::where('is_active', true)->pluck('name', 'id')
+                        )
+                        ->required(),
+
+                    Forms\Components\Textarea::make('specific_text')
+                        ->label('Tipo de Ação')
+                        ->placeholder('Ex: Ação Trabalhista, Ação de Indenização por Danos Morais...')
+                        ->rows(2)
+                        ->required(),
+
+                    Forms\Components\TextInput::make('fee_percentage')
+                        ->label('Percentual de Honorários')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(100)
+                        ->step(0.01)
+                        ->suffix('%')
+                        ->placeholder('Ex: 30')
+                        ->required(),
+                ])
+                ->action(function (array $data, FeeAgreementService $service): void {
+                    $agreement = FeeAgreement::create([
+                        'client_id'                 => $this->record->id,
+                        'fee_agreement_template_id' => $data['fee_agreement_template_id'],
+                        'user_id'                   => auth()->id(),
+                        'specific_text'             => $data['specific_text'],
+                        'fee_percentage'            => $data['fee_percentage'],
+                    ]);
+
+                    $agreement->update(['rendered_body' => $service->render($agreement)]);
+
+                    $this->redirect(
+                        \App\Filament\Resources\FeeAgreementResource::getUrl('edit', ['record' => $agreement->id])
+                    );
+                })
+                ->modalHeading('Gerar Contrato de Honorários')
+                ->modalSubmitActionLabel('Continuar →'),
+        ];
     }
 }
