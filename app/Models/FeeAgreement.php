@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class FeeAgreement extends Model
 {
@@ -38,5 +39,8 @@ class FeeAgreement extends Model
         return $this->belongsTo(User::class);
     }
 
-
+    public function lawyers(): BelongsToMany
+    {
+        return $this->belongsToMany(Lawyer::class, 'fee_agreement_lawyer');
+    }
 }

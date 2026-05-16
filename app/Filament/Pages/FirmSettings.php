@@ -79,7 +79,7 @@ class FirmSettings extends Page implements HasForms
                                     "<img src='{$url}' style='max-height:100px;'>"
                                 );
                             })
-                            ->columnSpan(2),
+                            ->columnSpanFull(),
 
                         Forms\Components\Select::make('firm_logo_position')
                             ->label('Posição do Logo')
@@ -149,19 +149,6 @@ class FirmSettings extends Page implements HasForms
                         Forms\Components\Textarea::make('firm_lawyers')
                             ->label('Parágrafo dos Advogados')
                             ->rows(4)
-                            ->columnSpanFull(),
-                    ]),
-
-                Forms\Components\Section::make('Contrato de Honorários')
-                    ->description('Identificação do escritório/advogado como CONTRATADA nos contratos de honorários.')
-                    ->schema([
-                        Forms\Components\Textarea::make('firm_contract_party')
-                            ->label('Identificação da CONTRATADA')
-                            ->helperText(
-                                'Ex: TULA CAROLINA CAMPANA JUNS, brasileira, casada, advogada, OAB/SP 431.326, ' .
-                                'com escritório na Rua Benjamin Constant, 61 – salas 1411 e 1412 - Centro, São Vicente - SP, 11310-500'
-                            )
-                            ->rows(3)
                             ->columnSpanFull(),
                     ]),
 

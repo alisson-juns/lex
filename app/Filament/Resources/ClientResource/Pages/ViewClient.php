@@ -85,6 +85,19 @@ class ViewClient extends ViewRecord
                         )
                         ->required(),
 
+                    Forms\Components\Select::make('lawyer_ids')
+                        ->label('Advogado(s)')
+                        ->options(
+                            Lawyer::where('active', true)
+                                ->orderBy('name')
+                                ->get()
+                                ->mapWithKeys(fn ($l) => [
+                                    $l->id => $l->name . ($l->oab ? ' — OAB ' . $l->oab . '/' . $l->oab_state : ''),
+                                ])
+                        )
+                        ->multiple()
+                        ->required(),
+
                     Forms\Components\Textarea::make('specific_text')
                         ->label('Tipo de Ação')
                         ->placeholder('Ex: Ação Trabalhista, Ação de Indenização por Danos Morais...')
@@ -109,6 +122,8 @@ class ViewClient extends ViewRecord
                         'specific_text'             => $data['specific_text'],
                         'fee_percentage'            => $data['fee_percentage'],
                     ]);
+
+                    $agreement->lawyers()->sync($data['lawyer_ids']);
 
                     $agreement->update(['rendered_body' => $service->render($agreement)]);
 

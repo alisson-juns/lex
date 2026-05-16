@@ -37,7 +37,6 @@ class Lawyer extends Model
         'active'        => 'boolean',
     ];
 
-    // Usuário do sistema vinculado (nullable — advogados externos não têm login)
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -81,5 +80,10 @@ class Lawyer extends Model
     public function enterprisePowersOfAttorney(): BelongsToMany
     {
         return $this->belongsToMany(EnterprisePowerOfAttorney::class, 'enterprise_power_of_attorney_lawyer');
+    }
+
+    public function feeAgreements(): BelongsToMany
+    {
+        return $this->belongsToMany(FeeAgreement::class, 'fee_agreement_lawyer');
     }
 }

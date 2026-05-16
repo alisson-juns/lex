@@ -17,6 +17,7 @@ class FeeAgreementService
             'client.client_documents',
             'client.client_contacts',
             'template',
+            'lawyers',
         ]);
 
         $client   = $agreement->client;
@@ -46,7 +47,7 @@ class FeeAgreementService
                 : '',
             'client_address'        => $address,
             'client_email'          => $client->client_contacts?->email ?? '',
-            'firm_contract_party'   => $settings->firm_contract_party ?? '',
+            'firm_contract_party'   => $this->buildContractParty($agreement, $settings),
             'specific_text'         => strtoupper($agreement->specific_text ?? ''),
             'fee_percentage'        => $this->formatPercentage($agreement->fee_percentage),
             'city_date'             => ($settings->firm_city ?? '') . ', ' . now()->translatedFormat('d \d\e F \d\e Y'),
@@ -94,6 +95,61 @@ class FeeAgreementService
         $agreement->update(['pdf_path' => $path]);
 
         return $path;
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Monta a identificação da CONTRATADA a partir dos advogados selecionados.
+     *
+     * Formato por advogado:
+     * "NOME, nacionalidade, estado civil, advogado(a), inscrito(a) na OAB/SP sob o n.º 000,
+     *  com escritório na [firm_address], [firm_city]/[firm_state], CEP [firm_zipcode]"
+     *
+     * Múltiplos advogados separados por " e ".
+     */
+    private function buildContractParty(FeeAgreement $agreement, FirmSetting $settings): string
+    {
+        if ($agreement->lawyers->isEmpty()) {
+            return '';
+        }
+
+        $firmAddress = collect([
+            $settings->firm_address,
+            $settings->firm_city && $settings->firm_state
+                ? $settings->firm_city . '/' . $settings->firm_state
+                : ($settings->firm_city ?? $settings->firm_state ?? null),
+            $settings->firm_zipcode ? 'CEP ' . $settings->firm_zipcode : null,
+        ])->filter()->join(', ');
+
+        $parts = $agreement->lawyers->map(function ($lawyer) use ($firmAddress) {
+            // Gênero: advogado ou advogada
+            $genero    = strtolower($lawyer->gender ?? '') === 'feminino' ? 'advogada' : 'advogado';
+            $inscrito  = strtolower($lawyer->gender ?? '') === 'feminino' ? 'inscrita' : 'inscrito';
+
+            $pieces = array_filter([
+                strtoupper($lawyer->name),
+                $lawyer->nationality ?: null,
+                $lawyer->marital_status ?: null,
+                $genero,
+                $lawyer->oab
+                    ? $inscrito . ' na OAB/' . ($lawyer->oab_state ?? '') . ' sob o n.º ' . $lawyer->oab
+                    : null,
+                $firmAddress
+                    ? 'com escritório na ' . $firmAddress
+                    : null,
+            ]);
+
+            return implode(', ', $pieces);
+        });
+
+        // Une com " e " entre o penúltimo e último, vírgula entre os demais
+        if ($parts->count() === 1) {
+            return $parts->first();
+        }
+
+        $last    = $parts->pop();
+        return $parts->join(', ') . ' e ' . $last;
     }
 
     private function formatPercentage(mixed $pct): string
