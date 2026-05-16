@@ -16,7 +16,6 @@ class FirmSetting extends Model
         'firm_email',
         'firm_logo',
         'firm_logo_position',
-        'firm_lawyers',
         'holiday_states',
         'holiday_cities',
     ];

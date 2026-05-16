@@ -81,17 +81,6 @@ class FirmSettings extends Page implements HasForms
                             })
                             ->columnSpanFull(),
 
-                        Forms\Components\Select::make('firm_logo_position')
-                            ->label('Posição do Logo')
-                            ->options([
-                                'left'   => 'Esquerda',
-                                'center' => 'Centro',
-                                'right'  => 'Direita',
-                            ])
-                            ->default('center')
-                            ->required()
-                            ->columnSpan(1),
-
                         Forms\Components\Actions::make([
                             Forms\Components\Actions\Action::make('upload_logo')
                                 ->label('Alterar Logo')
@@ -141,16 +130,18 @@ class FirmSettings extends Page implements HasForms
                                     Notification::make()->title('Logo atualizado!')->success()->send();
                                 }),
                         ])->columnSpanFull(),
-                    ])->columns(3),
 
-                Forms\Components\Section::make('Advogados')
-                    ->description('Texto que aparecerá na procuração onde estão os dados dos advogados. Use HTML se necessário.')
-                    ->schema([
-                        Forms\Components\Textarea::make('firm_lawyers')
-                            ->label('Parágrafo dos Advogados')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                    ]),
+                        Forms\Components\Select::make('firm_logo_position')
+                            ->label('Posição do Logo nos documentos')
+                            ->options([
+                                'left'   => 'Esquerda',
+                                'center' => 'Centro',
+                                'right'  => 'Direita',
+                            ])
+                            ->default('center')
+                            ->required()
+                            ->columnSpan(1),
+                    ])->columns(3),
 
                 Forms\Components\Section::make('Feriados no Calendário')
                     ->description('Feriados nacionais são exibidos automaticamente. Configure abaixo os feriados estaduais e municipais.')
