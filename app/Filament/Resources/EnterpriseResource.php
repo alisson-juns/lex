@@ -35,6 +35,7 @@ class EnterpriseResource extends Resource
             \App\Filament\Resources\EnterpriseResource\RelationManagers\LegalCasesRelationManager::class,
             \App\Filament\Resources\EnterpriseResource\RelationManagers\LegalCasesRelationManager::class,
             \App\Filament\Resources\EnterpriseResource\RelationManagers\EnterprisePowersOfAttorneyRelationManager::class,
+            \App\Filament\Resources\EnterpriseResource\RelationManagers\EnterpriseFeeAgreementsRelationManager::class,
         ];
     }
 

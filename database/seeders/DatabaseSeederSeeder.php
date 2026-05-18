@@ -13,5 +13,8 @@ class DatabaseSeederSeeder extends Seeder
     public function run(): void
     {
         $this->call(PowerOfAttorneyTemplateSeeder::class);
+        $this->call(EnterprisePowerOfAttorneyTemplateSeeder::class);
+        $this->call(EnterpriseFeeAgreementTemplateSeeder::class);
+
     }
 }

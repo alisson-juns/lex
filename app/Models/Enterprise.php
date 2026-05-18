@@ -51,4 +51,9 @@ class Enterprise extends Model
     {
         return $this->hasMany(EnterprisePowerOfAttorney::class);
     }
+
+    public function feeAgreements(): HasMany
+    {
+        return $this->hasMany(EnterpriseFeeAgreement::class);
+    }
 }
