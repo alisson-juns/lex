@@ -17,7 +17,7 @@ class FeeAgreementTemplateResource extends Resource
     protected static ?string $model            = FeeAgreementTemplate::class;
     protected static ?string $modelLabel       = 'Modelo de Contrato PF';
     protected static ?string $pluralModelLabel = 'Modelos de Contrato PF';
-    protected static ?string $navigationGroup  = 'Configurações';
+    protected static ?string $navigationGroup  = 'Modelos de Documentos';
     protected static ?string $navigationIcon   = 'heroicon-o-document-check';
     protected static ?int    $navigationSort   = 96;
 

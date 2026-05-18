@@ -17,7 +17,7 @@ class PowerOfAttorneyTemplateResource extends Resource
     protected static ?string $model = PowerOfAttorneyTemplate::class;
     protected static ?string $modelLabel        = 'Modelo de Procuração';
     protected static ?string $pluralModelLabel  = 'Modelos de Procuração';
-    protected static ?string $navigationGroup   = 'Configurações';
+    protected static ?string $navigationGroup   = 'Modelos de Documentos';
     protected static ?string $navigationIcon    = 'heroicon-o-document-text';
     protected static ?int    $navigationSort    = 97;
 

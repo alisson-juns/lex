@@ -17,7 +17,7 @@ class GratuityDeclarationTemplateResource extends Resource
     protected static ?string $model            = GratuityDeclarationTemplate::class;
     protected static ?string $modelLabel       = 'Modelo de Declaração';
     protected static ?string $pluralModelLabel = 'Modelos de Declaração';
-    protected static ?string $navigationGroup  = 'Configurações';
+    protected static ?string $navigationGroup  = 'Modelos de Documentos';
     protected static ?string $navigationIcon   = 'heroicon-o-document-text';
     protected static ?int    $navigationSort   = 98;
 
