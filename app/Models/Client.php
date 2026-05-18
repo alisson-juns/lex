@@ -67,4 +67,9 @@ class Client extends Model
     {
         return $this->hasMany(PowerOfAttorney::class);
     }
+
+    public function gratuityDeclarations(): HasMany
+    {
+        return $this->hasMany(GratuityDeclaration::class);
+    }
 }

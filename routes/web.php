@@ -5,6 +5,7 @@ use App\Http\Controllers\PowerOfAttorneyController;
 use App\Http\Controllers\EnterprisePowerOfAttorneyController;
 use App\Http\Controllers\FeeAgreementController;
 use App\Http\Controllers\EnterpriseFeeAgreementController;
+use App\Http\Controllers\GratuityDeclarationController;
 
 Route::get('/', function () {
     return redirect('/user');
@@ -22,5 +23,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/contratos/empresa/{enterpriseFeeAgreement}/pdf', [EnterpriseFeeAgreementController::class, 'pdf'])
         ->name('enterprise-fee-agreement.pdf');
+
+    Route::get('/declaracoes/{gratuityDeclaration}/pdf', [GratuityDeclarationController::class, 'pdf'])
+        ->name('gratuity-declaration.pdf');
 
 });

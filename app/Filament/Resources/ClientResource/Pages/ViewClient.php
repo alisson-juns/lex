@@ -7,6 +7,9 @@ use App\Models\FeeAgreementTemplate;
 use App\Models\PowerOfAttorney;
 use App\Models\PowerOfAttorneyTemplate;
 use App\Models\Lawyer;
+use App\Models\GratuityDeclaration;
+use App\Models\GratuityDeclarationTemplate;
+use App\Services\GratuityDeclarationService;
 use App\Services\FeeAgreementService;
 use App\Services\PowerOfAttorneyService;
 use Filament\Actions;
@@ -133,6 +136,34 @@ class ViewClient extends ViewRecord
                 })
                 ->modalHeading('Gerar Contrato de Honorários')
                 ->modalSubmitActionLabel('Continuar →'),
-        ];
+
+            Action::make('generateDeclaration')
+                ->label('Declaração de Gratuidade')
+                ->icon('heroicon-o-document-text')
+                ->color('info')
+                ->form([
+                    Forms\Components\Select::make('gratuity_declaration_template_id')
+                        ->label('Modelo')
+                        ->options(
+                            GratuityDeclarationTemplate::where('is_active', true)->pluck('name', 'id')
+                        )
+                        ->required(),
+                ])
+                ->action(function (array $data, GratuityDeclarationService $service): void {
+                    $declaration = GratuityDeclaration::create([
+                        'client_id'                        => $this->record->id,
+                        'gratuity_declaration_template_id' => $data['gratuity_declaration_template_id'],
+                        'user_id'                          => auth()->id(),
+                    ]);
+
+                    $declaration->update(['rendered_body' => $service->render($declaration)]);
+
+                    $this->redirect(
+                        \App\Filament\Resources\GratuityDeclarationResource::getUrl('edit', ['record' => $declaration->id])
+                    );
+                })
+                ->modalHeading('Gerar Declaração de Gratuidade')
+                ->modalSubmitActionLabel('Continuar →'),
+                    ];
     }
 }
