@@ -6,6 +6,7 @@ use App\Http\Controllers\EnterprisePowerOfAttorneyController;
 use App\Http\Controllers\FeeAgreementController;
 use App\Http\Controllers\EnterpriseFeeAgreementController;
 use App\Http\Controllers\GratuityDeclarationController;
+use App\Http\Controllers\GoogleAuthController;
 
 Route::get('/', function () {
     return redirect('/user');
@@ -26,5 +27,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/declaracoes/{gratuityDeclaration}/pdf', [GratuityDeclarationController::class, 'pdf'])
         ->name('gratuity-declaration.pdf');
+
+    Route::get('/google/redirect', [GoogleAuthController::class, 'redirect'])
+        ->name('google.redirect');
+    Route::get('/google/callback', [GoogleAuthController::class, 'callback'])
+        ->name('google.callback');
+    Route::get('/google/disconnect', [GoogleAuthController::class, 'disconnect'])
+        ->name('google.disconnect');
+
 
 });

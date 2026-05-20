@@ -9,11 +9,13 @@ use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\GoogleToken;
 
 class User extends Authenticatable implements FilamentUser
 {
     use HasRoles;
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use Notifiable;
 
     protected $fillable = [
         'name',
@@ -44,4 +46,10 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasOne(Lawyer::class);
     }
+
+    public function googleToken(): HasOne
+    {
+        return $this->hasOne(GoogleToken::class);
+    }
+
 }

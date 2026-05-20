@@ -8,9 +8,12 @@ use App\Filament\Resources\HearingResource;
 use App\Filament\Resources\TaskResource;
 use App\Models\FirmSetting;
 use App\Models\Hearing;
+use App\Models\HearingGoogleEvent;
 use App\Models\Lawyer;
 use App\Models\LegalCase;
 use App\Models\Task;
+use App\Models\TaskGoogleEvent;
+use App\Services\GoogleCalendarService;
 use App\Services\HolidayService;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -19,6 +22,7 @@ use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
+use Livewire\Attributes\On;
 
 class CalendarWidget extends FullCalendarWidget
 {
@@ -38,16 +42,15 @@ class CalendarWidget extends FullCalendarWidget
             ->with('legalCase', 'lawyer')
             ->get()
             ->map(fn (Hearing $hearing) => [
-                'id'                    => 'hearing-' . $hearing->id,
-                'title'                 => '⚖️ ' . $hearing->description,
-                'start'                 => $hearing->date->toDateString()
-                                           . ($hearing->time ? 'T' . $hearing->time : ''),
-                'backgroundColor'       => '#3b82f6',
-                'borderColor'           => '#2563eb',
-                'textColor'             => '#ffffff',
-                'editable'              => false,
-                // sem 'url' — navegação via botões do popover
-                'extendedProps'         => [
+                'id'              => 'hearing-' . $hearing->id,
+                'title'           => '⚖️ ' . $hearing->description,
+                'start'           => $hearing->date->toDateString()
+                                     . ($hearing->time ? 'T' . $hearing->time : ''),
+                'backgroundColor' => '#3b82f6',
+                'borderColor'     => '#2563eb',
+                'textColor'       => '#ffffff',
+                'editable'        => false,
+                'extendedProps'   => [
                     'type'    => 'hearing',
                     'status'  => $hearing->status->label(),
                     'color'   => '#3b82f6',
@@ -64,15 +67,15 @@ class CalendarWidget extends FullCalendarWidget
             ->with('lawyers', 'legalCase')
             ->get()
             ->map(fn (Task $task) => [
-                'id'                    => 'task-' . $task->id,
-                'title'                 => '📋 ' . $task->title,
-                'start'                 => $task->due_date->toDateString()
-                                           . ($task->due_time ? 'T' . $task->due_time : ''),
-                'backgroundColor'       => '#f59e0b',
-                'borderColor'           => '#d97706',
-                'textColor'             => '#ffffff',
-                'editable'              => true,
-                'extendedProps'         => [
+                'id'              => 'task-' . $task->id,
+                'title'           => '📋 ' . $task->title,
+                'start'           => $task->due_date->toDateString()
+                                     . ($task->due_time ? 'T' . $task->due_time : ''),
+                'backgroundColor' => '#f59e0b',
+                'borderColor'     => '#d97706',
+                'textColor'       => '#ffffff',
+                'editable'        => true,
+                'extendedProps'   => [
                     'type'    => 'task',
                     'status'  => $task->status->label(),
                     'color'   => '#f59e0b',
@@ -83,7 +86,7 @@ class CalendarWidget extends FullCalendarWidget
                 ],
             ]);
 
-        // ── Feriados ──────────────────────────────────────
+        // ── Feriados ──────────────────────────────────────────────────
         $settings = FirmSetting::instance();
 
         $holidays = (new HolidayService())->getEvents(
@@ -93,7 +96,28 @@ class CalendarWidget extends FullCalendarWidget
             $settings->holiday_cities ?? []
         );
 
-        return array_merge($hearings->toArray(), $tasks->toArray(), $holidays);
+        // ── Google Calendar — eventos externos do usuário logado ──────
+        $googleEvents = [];
+        $user         = auth()->user();
+
+        if ($user && $user->googleToken) {
+            // IDs do LexFirma já sincronizados para este usuário — evita duplicação
+            $lexIds = HearingGoogleEvent::where('user_id', $user->id)
+                ->pluck('google_event_id')
+                ->merge(
+                    TaskGoogleEvent::where('user_id', $user->id)->pluck('google_event_id')
+                )
+                ->toArray();
+
+            $all = app(GoogleCalendarService::class)
+                ->getEventsForCalendar($user, $fetchInfo['start'], $fetchInfo['end']);
+
+            // getEventsForCalendar já filtra pelos lexIds internamente,
+            // mas fazemos o array_values para garantir índices limpos
+            $googleEvents = array_values($all);
+        }
+
+        return array_merge($hearings->toArray(), $tasks->toArray(), $holidays, $googleEvents);
     }
 
     // ─────────────────────────────────────────────
@@ -128,6 +152,7 @@ class CalendarWidget extends FullCalendarWidget
             'due_time' => $newTime ?? $task->due_time,
             'status'   => TaskStatus::Rescheduled->value,
         ]);
+        // TaskObserver::updated() sincroniza no Google para todos os usuários
 
         Notification::make()
             ->title('Tarefa reagendada')
@@ -153,6 +178,54 @@ class CalendarWidget extends FullCalendarWidget
     ): void {
         $this->selectedDate = substr($start, 0, 10);
         $this->mountAction('createEvent');
+    }
+
+    // ─────────────────────────────────────────────
+    // Exclusão pelo popover
+    // ─────────────────────────────────────────────
+    #[On('delete-calendar-event')]
+    public function deleteEvent(string $eventId, string $type): void
+    {
+        if ($type === 'hearing') {
+            $id      = (int) str_replace('hearing-', '', $eventId);
+            $hearing = Hearing::find($id);
+
+            if (! $hearing) {
+                Notification::make()->title('Audiência não encontrada.')->danger()->send();
+                return;
+            }
+
+            $title = $hearing->description;
+            $hearing->delete();
+            // HearingObserver::deleted() remove do Google Calendar de todos os usuários
+
+            Notification::make()
+                ->title('Audiência excluída')
+                ->body("\"{$title}\" foi removida do calendário.")
+                ->warning()
+                ->send();
+
+        } elseif ($type === 'task') {
+            $id   = (int) str_replace('task-', '', $eventId);
+            $task = Task::find($id);
+
+            if (! $task) {
+                Notification::make()->title('Tarefa não encontrada.')->danger()->send();
+                return;
+            }
+
+            $title = $task->title;
+            $task->delete();
+            // TaskObserver::deleted() remove do Google Calendar de todos os usuários
+
+            Notification::make()
+                ->title('Tarefa excluída')
+                ->body("\"{$title}\" foi removida do calendário.")
+                ->warning()
+                ->send();
+        }
+
+        $this->refreshRecords();
     }
 
     protected function headerActions(): array
@@ -261,6 +334,7 @@ class CalendarWidget extends FullCalendarWidget
                             'status'        => TaskStatus::Scheduled->value,
                             'created_by'    => auth()->id(),
                         ]);
+                        // TaskObserver::created() → sincroniza para todos os usuários com token
 
                         if (! empty($data['task_lawyers'])) {
                             $task->lawyers()->sync($data['task_lawyers']);
@@ -286,6 +360,7 @@ class CalendarWidget extends FullCalendarWidget
                             'legal_case_id' => $data['legal_case_id'] ?? null,
                             'status'        => HearingStatus::Scheduled->value,
                         ]);
+                        // HearingObserver::created() → sincroniza para todos os usuários com token
 
                         Notification::make()
                             ->title('Audiência criada')
@@ -348,14 +423,27 @@ class CalendarWidget extends FullCalendarWidget
         return <<<'JS'
         function({ event, el }) {
 
-            // ── Feriados: colore o número do dia e não abre popover
+            // ── Feriados: colore o número do dia e não abre popover ──
             if (event.extendedProps?.type === 'holiday') {
                 const cell = el.closest('.fc-daygrid-day');
                 if (cell) cell.classList.add('has-holiday');
                 return;
             }
 
-            // ── Injeta CSS do popover uma única vez ──────────────
+            // ── Eventos Google externos: abre no Google Calendar ─────
+            if (event.extendedProps?.type === 'google') {
+                el.style.cursor = 'pointer';
+                el.title = event.extendedProps.description || 'Evento do Google Calendar';
+                el.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const link = event.extendedProps.htmlLink;
+                    if (link) window.open(link, '_blank');
+                });
+                return;
+            }
+
+            // ── Injeta CSS do popover uma única vez ──────────────────
             if (!document.getElementById('fc-popover-style')) {
                 const style = document.createElement('style');
                 style.id = 'fc-popover-style';
@@ -467,24 +555,36 @@ class CalendarWidget extends FullCalendarWidget
                     #fc-event-popover .fcp-btn-edit {
                         color: #fff;
                     }
+                    #fc-event-popover .fcp-btn-delete {
+                        background: #dc2626;
+                        color: #ffffff;
+                        flex: 0 0 auto;
+                        padding: 0.4rem 0.75rem;
+                    }
+                    .dark #fc-event-popover .fcp-btn-delete {
+                        background: #dc2626;
+                        color: #ffffff;
+                    }
+                    #fc-event-popover .fcp-btn-delete:hover {
+                        background: #ef4444;
+                        opacity: 1;
+                    }
                 `;
                 document.head.appendChild(style);
             }
 
-            // ── Intercepta o clique no evento ────────────────────
+            // ── Intercepta o clique no evento ────────────────────────
             el.style.cursor = 'pointer';
             el.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Remove popover existente
                 document.getElementById('fc-event-popover')?.remove();
 
                 const props  = event.extendedProps;
                 const start  = event.start;
                 const color  = props.color || '#6b7280';
 
-                // Formata data/hora
                 const dateStr = start
                     ? start.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
                     : '';
@@ -492,14 +592,12 @@ class CalendarWidget extends FullCalendarWidget
                     ? start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                     : '';
 
-                // Monta linhas de detalhe
                 let rows = '';
                 rows += `<div class="fcp-row">
                             <span>📅 Data</span>
                             <span>${dateStr}${timeStr ? ' · ' + timeStr : ''}</span>
                          </div>`;
                 if (props.status) {
-                    // Calcula luminância para escolher texto preto ou branco
                     const hex = color.replace('#','');
                     const r = parseInt(hex.slice(0,2),16)/255;
                     const g = parseInt(hex.slice(2,4),16)/255;
@@ -541,11 +639,11 @@ class CalendarWidget extends FullCalendarWidget
                     <div class="fcp-footer">
                         <a href="${props.viewUrl}" class="fcp-btn fcp-btn-view">Ver detalhes</a>
                         <a href="${props.editUrl}" class="fcp-btn fcp-btn-edit" style="background:${color}">Editar</a>
+                        <button class="fcp-btn fcp-btn-delete" id="fcp-delete-btn">Excluir</button>
                     </div>
                 `;
                 document.body.appendChild(popover);
 
-                // Posiciona próximo ao elemento clicado
                 const rect  = el.getBoundingClientRect();
                 const pw    = popover.offsetWidth  || 300;
                 const ph    = popover.offsetHeight || 200;
@@ -563,14 +661,23 @@ class CalendarWidget extends FullCalendarWidget
                 popover.style.left = left + 'px';
                 popover.style.top  = top  + 'px';
 
-                // Fecha ao clicar no X
                 document.getElementById('fcp-close-btn').addEventListener('click', function(ev) {
                     ev.stopPropagation();
                     popover.remove();
                 });
+
+                document.getElementById('fcp-delete-btn').addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    const tipo  = props.type === 'hearing' ? 'audiência' : 'tarefa';
+                    const label = event.title.replace(/^[^\s]+\s/, '');
+                    if (! confirm(`Excluir ${tipo} "${label}"?\n\nEsta ação pode ser desfeita pelo administrador.`)) {
+                        return;
+                    }
+                    popover.remove();
+                    Livewire.dispatch('delete-calendar-event', { eventId: event.id, type: props.type });
+                });
             });
 
-            // Fecha ao clicar fora
             if (!window._fcPopoverOutside) {
                 window._fcPopoverOutside = true;
                 document.addEventListener('click', function(e) {
