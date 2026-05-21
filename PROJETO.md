@@ -57,6 +57,8 @@ Advogados (acesso inicial). Controle de permissões via Filament Shield.
 - Enums com método `label()` em português para status
 - Configurações do escritório (`FirmSettings`): nome, endereço, logo, posição do logo, cidades/estados para feriados
 - Calendário (`CalendarPage`) com widget de audiências e tarefas próximas
+- Calendário integrado com o Google Calendar de forma bidirecional
+- Criado lixeira dos soft-deletes com plugin Revive, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
 
 ### Estrutura de localização do processo
 
@@ -91,6 +93,12 @@ Todos os documentos seguem o mesmo fluxo:
 
 ## O que falta construir
 
-- [ ] FullCalendar integrado com Google Agenda
-- [ ] Dashboard customizada
-- [ ] Módulo de estagiários
+- [ ] Dashboard customizada utilizar plugin Nord Theme
+- [ ] Login customizado com o plugin Filament Breezy
+- [ ] Registros de atividades dos usuários com plugin ActivityLog - spatie/laravel-activitylog
+
+## Extras não prioritários
+
+- [ ] Filament Spatie Google Fonts
+- [ ] Plugin Peek - full-screen preview modal
+- [ ] Plugin Curator - media manager

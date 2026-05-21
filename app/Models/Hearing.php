@@ -6,10 +6,12 @@ use App\Enums\HearingStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Promethys\Revive\Concerns\Recyclable;
 
 class Hearing extends Model
 {
     use SoftDeletes;
+    use Recyclable;
 
     protected $fillable = [
         'legal_case_id',

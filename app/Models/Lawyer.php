@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Promethys\Revive\Concerns\Recyclable;
 
 class Lawyer extends Model
 {
     use SoftDeletes;
+    use Recyclable;
 
     protected $fillable = [
         'user_id',

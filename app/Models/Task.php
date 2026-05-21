@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Promethys\Revive\Concerns\Recyclable;
 
 class Task extends Model
 {
     use SoftDeletes;
+    use Recyclable;
 
     protected $fillable = [
         'legal_case_id',

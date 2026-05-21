@@ -32,4 +32,9 @@ class HearingObserver
     {
         $this->googleService->deleteHearingEvent($hearing);
     }
+
+    public function restored(Hearing $hearing): void
+    {
+        $this->googleService->createHearingEvent($hearing);
+    }
 }

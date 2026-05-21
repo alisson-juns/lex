@@ -15,6 +15,7 @@ use Filament\Widgets;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
+use Promethys\Revive\RevivePlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -25,10 +26,11 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 class AdminPanelProvider extends PanelProvider
 {
     public function boot(): void
-{
-    FilamentAsset::register([
-Css::make('fullcalendar-custom', base_path('resources/css/fullcalendar-custom.css')),    ]);
-}
+    {
+        FilamentAsset::register([
+        Css::make('fullcalendar-custom', base_path('resources/css/fullcalendar-custom.css')),    ]);
+
+    }
 
     public function panel(Panel $panel): Panel
     {
@@ -44,8 +46,9 @@ Css::make('fullcalendar-custom', base_path('resources/css/fullcalendar-custom.cs
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                \App\Filament\Pages\Dashboard::class, // sua versão, não a do Filament
+                \App\Filament\Pages\Dashboard::class,
                 \App\Filament\Pages\FirmSettings::class,
+                \App\Filament\Pages\RecycleBinPage::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -53,7 +56,7 @@ Css::make('fullcalendar-custom', base_path('resources/css/fullcalendar-custom.cs
                 \App\Filament\Widgets\UpcomingTasksWidget::class,
                 \App\Filament\Widgets\UpcomingHearingsWidget::class,
                 Widgets\AccountWidget::class,
-                 
+
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -72,6 +75,11 @@ Css::make('fullcalendar-custom', base_path('resources/css/fullcalendar-custom.cs
                     ->selectable(true)
                     ->timezone(config('app.timezone'))
                     ->locale('pt-br'),
+
+
+
+
+
             ])
             ->authMiddleware([
                 Authenticate::class,

@@ -32,4 +32,9 @@ class TaskObserver
     {
         $this->googleService->deleteTaskEvent($task);
     }
+
+    public function restored(Task $task): void
+    {
+        $this->googleService->createTaskEvent($task);
+    }
 }

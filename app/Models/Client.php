@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Promethys\Revive\Concerns\Recyclable;
 
 class Client extends Model
 {
     use SoftDeletes;
+    use Recyclable;
+
 
     protected $fillable = [
         'name',
