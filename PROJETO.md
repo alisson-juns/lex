@@ -94,11 +94,11 @@ Todos os documentos seguem o mesmo fluxo:
 ## O que falta construir
 
 - [ ] Dashboard customizada utilizar plugin Nord Theme
-- [ ] Login customizado com o plugin Filament Breezy
+- [ ] Plugin Peek - full-screen preview modal
 - [ ] Registros de atividades dos usuários com plugin ActivityLog - spatie/laravel-activitylog
 
 ## Extras não prioritários
 
 - [ ] Filament Spatie Google Fonts
-- [ ] Plugin Peek - full-screen preview modal
+- [ ] Login customizado com o plugin Filament Breezy
 - [ ] Plugin Curator - media manager

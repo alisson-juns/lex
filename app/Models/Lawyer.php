@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Promethys\Revive\Concerns\Recyclable;
+use App\Traits\LogsActivityInPortuguese;
 
 class Lawyer extends Model
 {
     use SoftDeletes;
     use Recyclable;
+    use LogsActivityInPortuguese;
 
     protected $fillable = [
         'user_id',
@@ -38,6 +40,29 @@ class Lawyer extends Model
         'oab_date'      => 'date',
         'active'        => 'boolean',
     ];
+
+    protected array $activitylogFields = [
+        'name',
+        'oab',
+        'oab_state',
+        'oab_subsection',
+        'active',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Advogado criado',
+            'updated'  => 'Advogado atualizado',
+            'deleted'  => 'Advogado excluído',
+            'restored' => 'Advogado restaurado',
+        ];
+    }
+
+    public function getActivitylogSubjectLabel(): string
+    {
+        return "{$this->name} (OAB {$this->oab}/{$this->oab_state})";
+    }
 
     public function user(): BelongsTo
     {

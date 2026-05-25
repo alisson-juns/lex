@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Traits\LogsActivityInPortuguese;
 
 class FeeAgreement extends Model
 {
+    use LogsActivityInPortuguese;
+
     protected $table = 'fee_agreements';
 
     protected $fillable = [
@@ -23,6 +26,22 @@ class FeeAgreement extends Model
     protected $casts = [
         'fee_percentage' => 'decimal:2',
     ];
+
+    protected array $activitylogFields = [
+        'specific_text',
+        'fee_percentage',
+        'pdf_path',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Contrato de honorários criado',
+            'updated'  => 'Contrato de honorários atualizado',
+            'deleted'  => 'Contrato de honorários excluído',
+            'restored' => 'Contrato de honorários restaurado',
+        ];
+    }
 
     public function client(): BelongsTo
     {

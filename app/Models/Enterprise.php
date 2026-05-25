@@ -7,17 +7,35 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Promethys\Revive\Concerns\Recyclable;
+use App\Traits\LogsActivityInPortuguese;
 
 class Enterprise extends Model
 {
     use SoftDeletes;
     use Recyclable;
+    use LogsActivityInPortuguese;
 
     protected $fillable = [
         'corporate_reason',
         'trade_name',
         'note',
     ];
+
+    protected array $activitylogFields = [
+        'corporate_reason',
+        'trade_name',
+        'note',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Empresa criada',
+            'updated'  => 'Empresa atualizada',
+            'deleted'  => 'Empresa excluída',
+            'restored' => 'Empresa restaurada',
+        ];
+    }
 
     public function enterprise_documents(): HasOne
     {

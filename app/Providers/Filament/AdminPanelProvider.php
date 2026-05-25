@@ -16,6 +16,7 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Promethys\Revive\RevivePlugin;
+use Rmsramos\Activitylog\ActivitylogPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -76,9 +77,22 @@ class AdminPanelProvider extends PanelProvider
                     ->timezone(config('app.timezone'))
                     ->locale('pt-br'),
 
-
-
-
+                ActivitylogPlugin::make()
+                ->resource(\App\Filament\Resources\CustomActivitylogResource::class)
+                ->label('Log de Atividade')
+                ->pluralLabel('Logs de Atividade')
+                ->navigationGroup('Sistema')
+                ->navigationIcon('heroicon-o-shield-check')
+                ->navigationSort(99)
+                ->authorize(fn () => auth()->user()->hasRole(['super_admin', 'admin']))
+                ->isRestoreActionHidden(false)
+                ->isRestoreModelActionHidden(false)
+                ->resource(\App\Filament\Resources\CustomActivitylogResource::class) // <- novo
+                ->translateLogKey(
+                    fn ($label) => __('activitylog_keys.' . $label) !== 'activitylog_keys.' . $label // <- novo
+                    ? __('activitylog_keys.' . $label)
+                    : $label
+                ),
 
             ])
             ->authMiddleware([

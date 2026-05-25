@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Promethys\Revive\Concerns\Recyclable;
+use App\Traits\LogsActivityInPortuguese;
 
 class LegalCase extends Model
 {
     use SoftDeletes;
     use Recyclable;
+    use LogsActivityInPortuguese;
 
     protected $fillable = [
         'folder_number',
@@ -32,6 +34,29 @@ class LegalCase extends Model
     protected $casts = [
         'status' => CaseStatus::class,
     ];
+
+    protected array $activitylogFields = [
+        'folder_number',
+        'case_number',
+        'opponent_name',
+        'status',
+        'note',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Processo criado',
+            'updated'  => 'Processo atualizado',
+            'deleted'  => 'Processo excluído',
+            'restored' => 'Processo restaurado',
+        ];
+    }
+
+    public function getActivitylogSubjectLabel(): string
+    {
+        return $this->case_number ?? $this->folder_number ?? "Processo #{$this->id}";
+    }
 
     public function client(): BelongsTo
     {
@@ -63,7 +88,6 @@ class LegalCase extends Model
         return $this->belongsTo(User::class, 'registered_by');
     }
 
-    // Múltiplos advogados via pivot legal_case_lawyer
     public function lawyers(): BelongsToMany
     {
         return $this->belongsToMany(Lawyer::class, 'legal_case_lawyer');

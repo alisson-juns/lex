@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Promethys\Revive\Concerns\Recyclable;
+use App\Traits\LogsActivityInPortuguese;
 
 class Client extends Model
 {
     use SoftDeletes;
     use Recyclable;
-
+    use LogsActivityInPortuguese;
 
     protected $fillable = [
         'name',
@@ -28,8 +29,32 @@ class Client extends Model
     ];
 
     protected $casts = [
-    'date_of_birth' => 'date',
+        'date_of_birth' => 'date',
     ];
+
+    protected array $activitylogFields = [
+        'name',
+        'date_of_birth',
+        'gender',
+        'marital_status',
+        'profession',
+        'note',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Cliente criado',
+            'updated'  => 'Cliente atualizado',
+            'deleted'  => 'Cliente excluído',
+            'restored' => 'Cliente restaurado',
+        ];
+    }
+
+    public function getActivitylogSubjectLabel(): string
+    {
+        return $this->name;
+    }
 
     public function client_documents(): HasOne
     {

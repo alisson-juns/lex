@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Promethys\Revive\Concerns\Recyclable;
+use App\Traits\LogsActivityInPortuguese;
 
 class Task extends Model
 {
     use SoftDeletes;
     use Recyclable;
+    use LogsActivityInPortuguese;
 
     protected $fillable = [
         'legal_case_id',
@@ -29,6 +31,30 @@ class Task extends Model
         'due_date' => 'date',
         'status'   => TaskStatus::class,
     ];
+
+    protected array $activitylogFields = [
+        'title',
+        'description',
+        'due_date',
+        'due_time',
+        'status',
+        'note',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Tarefa criada',
+            'updated'  => 'Tarefa atualizada',
+            'deleted'  => 'Tarefa excluída',
+            'restored' => 'Tarefa restaurada',
+        ];
+    }
+
+    public function getActivitylogSubjectLabel(): string
+    {
+        return $this->title;
+    }
 
     public function legalCase(): BelongsTo
     {

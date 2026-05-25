@@ -18,6 +18,7 @@
         "laravellegends/pt-br-validator": "^12.2",
         "leandrocfe/filament-ptbr-form-fields": "^3.0",
         "promethys/revive": "^1.0",
+        "rmsramos/activitylog": "^2.0",
         "saade/filament-fullcalendar": "^3.0",
         "spatie/laravel-permission": "^6.0"
     },

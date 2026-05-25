@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Traits\LogsActivityInPortuguese;
 
 class EnterprisePowerOfAttorney extends Model
 {
+    use LogsActivityInPortuguese;
+
     protected $table = 'enterprise_powers_of_attorney';
 
     protected $fillable = [
@@ -19,6 +22,21 @@ class EnterprisePowerOfAttorney extends Model
         'rendered_body',
         'pdf_path',
     ];
+
+    protected array $activitylogFields = [
+        'specific_text',
+        'pdf_path',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Procuração PJ criada',
+            'updated'  => 'Procuração PJ atualizada',
+            'deleted'  => 'Procuração PJ excluída',
+            'restored' => 'Procuração PJ restaurada',
+        ];
+    }
 
     public function enterprise(): BelongsTo
     {

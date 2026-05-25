@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Promethys\Revive\Concerns\Recyclable;
+use App\Traits\LogsActivityInPortuguese;
 
 class Hearing extends Model
 {
     use SoftDeletes;
     use Recyclable;
+    use LogsActivityInPortuguese;
 
     protected $fillable = [
         'legal_case_id',
@@ -28,6 +30,30 @@ class Hearing extends Model
         'date'   => 'date',
         'status' => HearingStatus::class,
     ];
+
+    protected array $activitylogFields = [
+        'description',
+        'date',
+        'time',
+        'location',
+        'status',
+        'note',
+    ];
+
+    protected function activitylogEventDescriptions(): array
+    {
+        return [
+            'created'  => 'Audiência criada',
+            'updated'  => 'Audiência atualizada',
+            'deleted'  => 'Audiência excluída',
+            'restored' => 'Audiência restaurada',
+        ];
+    }
+
+    public function getActivitylogSubjectLabel(): string
+    {
+        return $this->description;
+    }
 
     public function legalCase(): BelongsTo
     {
