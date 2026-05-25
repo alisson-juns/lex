@@ -59,6 +59,7 @@ Advogados (acesso inicial). Controle de permissões via Filament Shield.
 - Calendário (`CalendarPage`) com widget de audiências e tarefas próximas
 - Calendário integrado com o Google Calendar de forma bidirecional
 - Criado lixeira dos soft-deletes com plugin Revive, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
+- Registros de atividades dos usuários com plugin ActivityLog - spatie/laravel-activitylog, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
 
 ### Estrutura de localização do processo
 
@@ -94,11 +95,8 @@ Todos os documentos seguem o mesmo fluxo:
 ## O que falta construir
 
 - [ ] Dashboard customizada utilizar plugin Nord Theme
-- [ ] Plugin Peek - full-screen preview modal
-- [ ] Registros de atividades dos usuários com plugin ActivityLog - spatie/laravel-activitylog
 
 ## Extras não prioritários
 
 - [ ] Filament Spatie Google Fonts
-- [ ] Login customizado com o plugin Filament Breezy
 - [ ] Plugin Curator - media manager

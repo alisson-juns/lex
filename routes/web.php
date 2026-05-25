@@ -7,6 +7,8 @@ use App\Http\Controllers\FeeAgreementController;
 use App\Http\Controllers\EnterpriseFeeAgreementController;
 use App\Http\Controllers\GratuityDeclarationController;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\ClientFichaController;
+use App\Http\Controllers\EnterpriseFichaController;
 
 Route::get('/', function () {
     return redirect('/user');
@@ -34,6 +36,14 @@ Route::middleware('auth')->group(function () {
         ->name('google.callback');
     Route::get('/google/disconnect', [GoogleAuthController::class, 'disconnect'])
         ->name('google.disconnect');
+
+
+    Route::get('/clientes/{client}/ficha', [ClientFichaController::class, 'show'])
+        ->name('client.ficha');
+
+    Route::get('/empresas/{enterprise}/ficha', [EnterpriseFichaController::class, 'show'])
+        ->name('enterprise.ficha');
+
 
 
 });

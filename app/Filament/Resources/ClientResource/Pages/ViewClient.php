@@ -164,6 +164,15 @@ class ViewClient extends ViewRecord
                 })
                 ->modalHeading('Gerar Declaração de Gratuidade')
                 ->modalSubmitActionLabel('Continuar →'),
-                    ];
+
+            Action::make('fichaCliente')
+                ->label('Imprimir Ficha')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->action(function () {
+                    $url = route('client.ficha', $this->record->id);
+                    $this->js("window.open('{$url}', '_blank')");
+                }),
+                ];
     }
 }

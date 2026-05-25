@@ -150,6 +150,15 @@ class ViewEnterprise extends ViewRecord
                 })
                 ->modalHeading('Gerar Contrato de Honorários')
                 ->modalSubmitActionLabel('Continuar →'),
+
+            Action::make('fichaEmpresa')
+                ->label('Imprimir Ficha')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->action(function () {
+                    $url = route('enterprise.ficha', $this->record->id);
+                    $this->js("window.open('{$url}', '_blank')");
+                }),
         ];
     }
 }
