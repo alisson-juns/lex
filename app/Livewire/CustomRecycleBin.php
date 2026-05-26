@@ -5,17 +5,17 @@ namespace App\Livewire;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Promethys\Revive\Tables\RecycleBin as BaseRecycleBin;
-use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Tables\Actions\ForceDeleteAction;
 use Filament\Tables\Actions\ForceDeleteBulkAction;
 use Filament\Tables\Actions\RestoreAction;
 use Filament\Tables\Actions\RestoreBulkAction;
-use Filament\Tables\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
 
 class CustomRecycleBin extends BaseRecycleBin
 {
+    protected static ?string $modelLabel = 'Lixeira';
+
     public function table(Table $table): Table
     {
         $modelLabels = [
@@ -29,6 +29,7 @@ class CustomRecycleBin extends BaseRecycleBin
         ];
 
         return parent::table($table)
+            ->recordAction(null)
             ->columns([
 
                 TextColumn::make('model_type')
@@ -38,6 +39,13 @@ class CustomRecycleBin extends BaseRecycleBin
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('state')
+                    ->label('Registro')
+                    ->getStateUsing(fn ($record) => $this->getModelIdentifier(
+                        $record->model_type,
+                        $record->state ?? []
+                    )),
+
                 TextColumn::make('deleted_at')
                     ->label('Excluído em')
                     ->dateTime('d/m/Y H:i')
@@ -45,32 +53,12 @@ class CustomRecycleBin extends BaseRecycleBin
             ])
 
             ->actions([
-                ViewAction::make('view_details')
-            ->button()
-            ->modalHeading('Detalhes do registro')
-            ->infolist(function ($record) {
-                $labels = $this->getFieldLabels($record->model_type);
-
-                return [
-                    KeyValueEntry::make('state')
-                        ->label('')
-                        ->state(function () use ($record, $labels) {
-                            $translated = [];
-                            foreach ($record->state ?? [] as $key => $value) {
-                                $label = $labels[$key] ?? $key;
-                                if (empty($label)) {
-                                    continue;
-                                } // oculta campos sem label (ex: recycle_bin_item)
-                                $translated[$label] = $value;
-                            }
-                            return $translated;
-                        }),
-                ];
-            }),
                 RestoreAction::make('restore')
                     ->button()
                     ->visible(true)
                     ->requiresConfirmation()
+                    ->modalHeading('Restaurar registro')
+                    ->modalDescription('Tem certeza que deseja restaurar este registro?')
                     ->action(function ($record) {
                         try {
                             $record->model?->restore();
@@ -85,6 +73,8 @@ class CustomRecycleBin extends BaseRecycleBin
                 ForceDeleteAction::make('force_delete')
                     ->button()
                     ->visible(true)
+                    ->modalHeading('Excluir permanentemente')
+                    ->modalDescription('Esta ação não pode ser desfeita. Tem certeza?')
                     ->using(function ($record) {
                         try {
                             $record->model?->forceDelete();
@@ -99,6 +89,8 @@ class CustomRecycleBin extends BaseRecycleBin
             ])
             ->bulkActions([
                 RestoreBulkAction::make('restore_selected')->button()
+                    ->modalHeading('Restaurar os itens selecionados')
+                    ->modalDescription('Tem certeza que deseja restaurar estes registros?')
                     ->action(function (Collection $models) {
                         foreach ($models as $model) {
                             try {
@@ -109,6 +101,8 @@ class CustomRecycleBin extends BaseRecycleBin
                     })->deselectRecordsAfterCompletion(),
 
                 ForceDeleteBulkAction::make('force_delete_selected')->button()
+                    ->modalHeading('Excluir permanentemente os itens selecionados')
+                    ->modalDescription('Esta ação não pode ser desfeita. Tem certeza?')
                     ->action(function (Collection $models) {
                         foreach ($models as $model) {
                             try {
@@ -121,91 +115,19 @@ class CustomRecycleBin extends BaseRecycleBin
             ]);
     }
 
-    protected function getFieldLabels(string $modelType): array
+    protected function getModelIdentifier(string $modelType, array $state): string
     {
-        $common = [
-            'id'               => 'ID',
-            'created_at'       => 'Criado em',
-            'updated_at'       => 'Atualizado em',
-            'deleted_at'       => 'Excluído em',
-            'note'             => 'Observação',
-            'status'           => 'Status',
-            'google_event_id'  => 'Google Event ID',
-            'recycle_bin_item' => '',
-        ];
-
-        $specific = match ($modelType) {
-            'App\\Models\\Task' => [
-                'legal_case_id' => 'Processo',
-                'created_by'    => 'Criado por',
-                'title'         => 'Título',
-                'description'   => 'Descrição',
-                'due_date'      => 'Data',
-                'due_time'      => 'Hora',
-            ],
-            'App\\Models\\Hearing' => [
-                'legal_case_id' => 'Processo',
-                'lawyer_id'     => 'Advogado',
-                'description'   => 'Descrição',
-                'date'          => 'Data',
-                'time'          => 'Hora',
-                'location'      => 'Local',
-            ],
-            'App\\Models\\Client' => [
-                'name'           => 'Nome',
-                'date_of_birth'  => 'Nascimento',
-                'gender'         => 'Gênero',
-                'marital_status' => 'Estado civil',
-                'profession'     => 'Profissão',
-                'nationality'    => 'Nacionalidade',
-                'father'         => 'Pai',
-                'mother'         => 'Mãe',
-                'place_of_birth' => 'Naturalidade',
-            ],
-            'App\\Models\\Enterprise' => [
-                'corporate_reason' => 'Razão social',
-                'trade_name'       => 'Nome fantasia',
-            ],
-            'App\\Models\\LegalCase' => [
-                'folder_number'   => 'Nº pasta',
-                'case_number'     => 'Nº processo',
-                'client_id'       => 'Cliente',
-                'enterprise_id'   => 'Empresa',
-                'opponent_name'   => 'Adverso',
-                'registered_by'   => 'Cadastrado por',
-                'forum_id'        => 'Fórum',
-                'court_name_id'   => 'Vara',
-                'court_number_id' => 'Nº vara',
-            ],
-            'App\\Models\\Lawyer' => [
-                'user_id'        => 'Usuário',
-                'name'           => 'Nome',
-                'oab'            => 'OAB',
-                'oab_state'      => 'Estado OAB',
-                'oab_subsection' => 'Subseção OAB',
-                'oab_date'       => 'Data OAB',
-                'date_of_birth'  => 'Nascimento',
-                'gender'         => 'Gênero',
-                'marital_status' => 'Estado civil',
-                'nationality'    => 'Nacionalidade',
-                'active'         => 'Ativo',
-            ],
-            'App\\Models\\Employee' => [
-                'name'           => 'Nome',
-                'date_of_birth'  => 'Nascimento',
-                'gender'         => 'Gênero',
-                'occupation_id'  => 'Cargo',
-                'marital_status' => 'Estado civil',
-                'nationality'    => 'Nacionalidade',
-                'active'         => 'Ativo',
-                'father'         => 'Pai',
-                'mother'         => 'Mãe',
-                'place_of_birth' => 'Naturalidade',
-            ],
-            default => [],
+        return match ($modelType) {
+            'App\\Models\\Client'     => $state['name'] ?? '-',
+            'App\\Models\\Enterprise' => $state['corporate_reason'] ?? '-',
+            'App\\Models\\LegalCase'  => $state['case_number'] ?? $state['folder_number'] ?? '-',
+            'App\\Models\\Hearing'    => $state['description'] ?? '-',
+            'App\\Models\\Task'       => $state['title'] ?? '-',
+            'App\\Models\\Lawyer'     => ($state['name'] ?? '-') . ' — OAB ' . ($state['oab'] ?? ''),
+            'App\\Models\\Employee'   => $state['name'] ?? '-',
+            default                   => "#{$state['id']}" ?? '-',
         };
-
-        return array_merge($common, $specific);
     }
+
 
 }
