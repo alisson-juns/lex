@@ -38,11 +38,32 @@ class UserResource extends Resource
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->maxLength(255),
                 Forms\Components\Select::make('roles')
-                    ->label('Perfil de acesso')
+                    ->label('Perfil')
                     ->relationship('roles', 'name')
+                    ->options(function (): array {
+                        $currentUser = auth()->user();
+
+                        $levelMap = [
+                            'super_admin' => 4,
+                            'admin'       => 3,
+                            'lawyer'      => 2,
+                            'user'        => 1,
+                        ];
+
+                        $currentLevel = match (true) {
+                            $currentUser->hasRole('super_admin') => 4,
+                            $currentUser->hasRole('admin')       => 3,
+                            default                              => 1,
+                        };
+
+                        return \Spatie\Permission\Models\Role::all()
+                            ->filter(fn ($role) => ($levelMap[$role->name] ?? 0) < $currentLevel)
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
                     ->multiple()
-                    ->preload()
-                    ->searchable(),
+                    ->required(),
+
                 Forms\Components\DateTimePicker::make('email_verified_at')
                     ->label('E-mail verificado em'),
             ]);
@@ -58,6 +79,9 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')
                     ->label('E-mail')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('roles.name')
+                    ->label('Perfil')
+                    ->getStateUsing(fn ($record) => $record->roles->pluck('name')->join(', ')),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado em')
                     ->dateTime('d/m/Y H:i')
