@@ -22,6 +22,7 @@ class Client extends Model
         'father',
         'mother',
         'place_of_birth',
+        'state',
         'nationality',
         'marital_status',
         'profession',

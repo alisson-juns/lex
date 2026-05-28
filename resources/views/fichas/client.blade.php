@@ -80,6 +80,7 @@
             <div class="field"><label>Profissão</label><span>{{ $client->profession ?? '—' }}</span></div>
             <div class="field"><label>Nacionalidade</label><span>{{ $client->nationality ?? '—' }}</span></div>
             <div class="field"><label>Naturalidade</label><span>{{ $client->place_of_birth ?? '—' }}</span></div>
+            <div class="field"><label>UF</label><span>{{ $client->state ?? '—' }}</span></div>
             <div class="field"><label>Filiação (pai)</label><span>{{ $client->father ?? '—' }}</span></div>
             <div class="field"><label>Filiação (mãe)</label><span>{{ $client->mother ?? '—' }}</span></div>
         </div>
@@ -171,6 +172,9 @@
             <div class="field"><label>RG</label><span>{{ $client->spouse->rg ?? '—' }}</span></div>
             <div class="field"><label>Profissão</label><span>{{ $client->spouse->profession ?? '—' }}</span></div>
             <div class="field"><label>Data de Nascimento</label><span>{{ $client->spouse->date_of_birth?->format('d/m/Y') ?? '—' }}</span></div>
+            <div class="field"><label>Naturalidade</label><span>{{ $client->spouse->place_of_birth ?? '—' }}</span></div>
+            <div class="field"><label>UF</label><span>{{ $client->spouse->state ?? '—' }}</span></div>
+            <div class="field"><label>Nacionalidade</label><span>{{ $client->spouse->nationality ?? '—' }}</span></div>
             <div class="field"><label>Celular</label><span>{{ $client->spouse->mobile ?? '—' }}</span></div>
         </div>
     </div>

@@ -22,6 +22,7 @@ class ClientSpouse extends Model
         'profession',
         'date_of_birth',
         'place_of_birth',
+        'state',
         'nationality',
         'phone',
         'mobile',
