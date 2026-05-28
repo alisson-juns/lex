@@ -10,6 +10,12 @@ class EditEnterprise extends EditRecord
 {
     protected static string $resource = EnterpriseResource::class;
 
+    protected function getSaveFormAction(): \Filament\Actions\Action
+    {
+        return parent::getSaveFormAction()
+            ->extraAttributes(['formnovalidate' => true]);
+    }
+
     protected function getHeaderActions(): array
     {
         return [

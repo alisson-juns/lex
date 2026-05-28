@@ -208,27 +208,53 @@ class ClientResource extends Resource
                                     Forms\Components\TextInput::make('email')
                                         ->label('E-mail')
                                         ->email()
+                                        ->rule('email')
                                         ->maxLength(255),
                                     Forms\Components\TextInput::make('cellphone')
                                         ->label('Celular')
                                         ->mask('(99) 99999-9999')
-                                        ->maxLength(15),
+                                        ->maxLength(15)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                        ->dehydrateStateUsing(
+                                            fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                ? $state
+                                                : null
+                                        ),
                                     Forms\Components\TextInput::make('phone')
                                         ->label('Telefone')
                                         ->mask('(99) 9999-9999')
-                                        ->maxLength(14),
+                                        ->maxLength(14)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                        ->dehydrateStateUsing(
+                                            fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                ? $state
+                                                : null
+                                        ),
                                     Forms\Components\TextInput::make('optional_email')
                                         ->label('E-mail opcional')
                                         ->email()
+                                        ->rule('email')
                                         ->maxLength(255),
                                     Forms\Components\TextInput::make('message_cell_phone')
                                         ->label('Celular para mensagens')
                                         ->mask('(99) 99999-9999')
-                                        ->maxLength(15),
+                                        ->maxLength(15)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                         ->dehydrateStateUsing(
+                                             fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                 ? $state
+                                                 : null
+                                         ),
                                     Forms\Components\TextInput::make('message_phone')
                                         ->label('Telefone para mensagens')
                                         ->mask('(99) 9999-9999')
-                                        ->maxLength(14),
+                                        ->maxLength(14)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                        ->dehydrateStateUsing(
+                                            fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                ? $state
+                                                : null
+                                        ),
                                     Forms\Components\Textarea::make('note')
                                         ->label('Observações')
                                         ->rows(3)
@@ -255,17 +281,14 @@ class ClientResource extends Resource
                                                 ->placeholder('000'),
                                             Forms\Components\TextInput::make('bank_name')
                                                 ->label('Nome do banco')
-                                                ->required()
                                                 ->maxLength(255)
                                                 ->placeholder('Ex: Banco do Brasil'),
                                             Forms\Components\TextInput::make('agency')
                                                 ->label('Agência')
-                                                ->required()
                                                 ->maxLength(20)
                                                 ->placeholder('0000-0'),
                                             Forms\Components\TextInput::make('account')
                                                 ->label('Conta')
-                                                ->required()
                                                 ->maxLength(20)
                                                 ->placeholder('00000-0'),
                                         ]),
@@ -388,6 +411,7 @@ class ClientResource extends Resource
                                            Forms\Components\TextInput::make('email')
                                                ->label('E-mail')
                                                ->email()
+                                               ->rule('email')
                                                ->maxLength(255),
                                            Forms\Components\TextInput::make('mobile')
                                                ->label('Celular')
@@ -407,28 +431,28 @@ class ClientResource extends Resource
                                ->visible(fn (callable $get) => $get('has_spouse') === true),
                        ]),
 
-                    Step::make('Dependentes')
-    ->icon('heroicon-m-user-group')
-    ->description('Filhos, tutelados e curatelados (se aplicável)')
-    ->schema([
-        Forms\Components\Repeater::make('wards')
-            ->label('Dependentes')
-            ->minItems(0)
-            ->defaultItems(0)
-            ->afterStateHydrated(function ($component, $record) {
-                if ($record) {
-                    $component->state(
-                        $record->wards->map(fn ($w) => [
-                            'id'            => $w->id,
-                            'name'          => $w->name,
-                            'cpf'           => $w->cpf,
-                            'rg'            => $w->rg,
-                            'date_of_birth' => $w->date_of_birth?->format('Y-m-d'),
-                            'note'          => $w->note,
-                        ])->toArray()
-                    );
-                }
-            })
+                            Step::make('Dependentes')
+                                ->icon('heroicon-m-user-group')
+                                ->description('Filhos, tutelados e curatelados (se aplicável)')
+                                ->schema([
+                Forms\Components\Repeater::make('wards')
+                    ->label('Dependentes')
+                    ->minItems(0)
+                    ->defaultItems(0)
+                    ->afterStateHydrated(function ($component, $record) {
+                        if ($record) {
+                            $component->state(
+                                $record->wards->map(fn ($w) => [
+                                    'id'            => $w->id,
+                                    'name'          => $w->name,
+                                    'cpf'           => $w->cpf,
+                                    'rg'            => $w->rg,
+                                    'date_of_birth' => $w->date_of_birth?->format('Y-m-d'),
+                                    'note'          => $w->note,
+                                ])->toArray()
+                            );
+                        }
+                    })
             ->schema([
                 Forms\Components\Hidden::make('id'),
                 Forms\Components\Grid::make(2)
@@ -704,10 +728,12 @@ class ClientResource extends Resource
                     ->schema([
                     TextEntry::make('email')
                             ->label('E-mail')
+                            ->rule('email')
                             ->placeholder('—')
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                     TextEntry::make('optional_email')
                             ->label('E-mail Alternativo')
+                            ->rule('email')
                             ->placeholder('—')
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                     TextEntry::make('cellphone')
@@ -792,6 +818,7 @@ class ClientResource extends Resource
                             ->placeholder('—'),
                     TextEntry::make('email')
                             ->label('E-mail')
+                            ->rule('email')
                             ->placeholder('—')
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                     TextEntry::make('mobile')

@@ -105,30 +105,33 @@ class EnterpriseResource extends Resource
                                             mode: 'suffix',
                                             errorMessage: 'CEP inválido.',
                                             setFields: [
-                                                'street'   => 'logradouro',
+                                                'street' => 'logradouro',
+                                                'number' => 'numero',
+                                                'complement' => 'complemento',
                                                 'district' => 'bairro',
-                                                'city'     => 'localidade',
-                                                'state'    => 'uf',
+                                                'city' => 'localidade',
+                                                'state' => 'uf',
                                             ]
-                                        ),
+                                        )
+                                        ->live(onBlur: true),
                                     Forms\Components\TextInput::make('street')
-                                        ->label('Logradouro')
+                                        ->label('Endereço')
                                         ->maxLength(255),
                                     Forms\Components\TextInput::make('number')
                                         ->label('Número')
-                                        ->maxLength(50),
+                                        ->maxLength(10),
                                     Forms\Components\TextInput::make('complement')
                                         ->label('Complemento')
                                         ->maxLength(50),
                                     Forms\Components\TextInput::make('district')
                                         ->label('Bairro')
-                                        ->maxLength(50),
+                                        ->maxLength(100),
                                     Forms\Components\TextInput::make('city')
                                         ->label('Cidade')
-                                        ->maxLength(50),
+                                        ->maxLength(100),
                                     Forms\Components\TextInput::make('state')
                                         ->label('Estado')
-                                        ->maxLength(50),
+                                        ->maxLength(2),
                                 ])
                                 ->columns(2),
                         ]),
@@ -142,27 +145,53 @@ class EnterpriseResource extends Resource
                                     Forms\Components\TextInput::make('email')
                                         ->label('E-mail')
                                         ->email()
+                                        ->rule('email')
                                         ->maxLength(50),
                                     Forms\Components\TextInput::make('optional_email')
                                         ->label('E-mail Alternativo')
                                         ->email()
+                                        ->rule('email')
                                         ->maxLength(50),
                                     Forms\Components\TextInput::make('cellphone')
                                         ->label('Celular')
                                         ->mask('(99) 99999-9999')
-                                        ->maxLength(20),
+                                        ->maxLength(20)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                         ->dehydrateStateUsing(
+                                             fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                 ? $state
+                                                 : null
+                                         ),
                                     Forms\Components\TextInput::make('phone')
                                         ->label('Telefone Fixo')
                                         ->mask('(99) 9999-9999')
-                                        ->maxLength(20),
+                                        ->maxLength(20)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                         ->dehydrateStateUsing(
+                                             fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                 ? $state
+                                                 : null
+                                         ),
                                     Forms\Components\TextInput::make('message_cell_phone')
                                         ->label('WhatsApp / Celular Recado')
                                         ->mask('(99) 99999-9999')
-                                        ->maxLength(20),
+                                        ->maxLength(20)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                         ->dehydrateStateUsing(
+                                             fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                 ? $state
+                                                 : null
+                                         ),
                                     Forms\Components\TextInput::make('message_phone')
                                         ->label('Telefone Recado')
                                         ->mask('(99) 9999-9999')
-                                        ->maxLength(20),
+                                        ->maxLength(20)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                         ->dehydrateStateUsing(
+                                             fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                 ? $state
+                                                 : null
+                                         ),
                                     Forms\Components\Textarea::make('note')
                                         ->label('Observações')
                                         ->rows(3)
@@ -224,11 +253,16 @@ class EnterpriseResource extends Resource
                                     Forms\Components\TextInput::make('email')
                                         ->label('E-mail')
                                         ->email()
+                                        ->rule('email')
                                         ->maxLength(100),
                                     Forms\Components\TextInput::make('phone')
                                         ->label('Telefone / Celular')
                                         ->mask('(99) 99999-9999')
-                                        ->maxLength(20),
+                                        ->maxLength(20)
+                                        ->extraInputAttributes([
+        'x-effect' => '$wire; if (!/\d/.test($el.value)) $el.value = ""',
+    ])
+    ->dehydrateStateUsing(fn ($state) => filled(preg_replace('/[^0-9]/', '', $state ?? '')) ? $state : null),
                                     Forms\Components\Textarea::make('note')
                                         ->label('Observações')
                                         ->rows(2)
@@ -360,10 +394,12 @@ class EnterpriseResource extends Resource
                     ->schema([
                         TextEntry::make('email')
                             ->label('E-mail')
+                            ->rule('email')
                             ->placeholder('—')
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                         TextEntry::make('optional_email')
                             ->label('E-mail Alternativo')
+                            ->rule('email')
                             ->placeholder('—')
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                         TextEntry::make('cellphone')

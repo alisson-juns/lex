@@ -1,13 +1,24 @@
 <?php
+
 namespace App\Filament\Resources\ClientResource\Pages;
 
 use App\Filament\Resources\ClientResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Notifications\Notification;
+use Illuminate\Validation\ValidationException;
 
 class EditClient extends EditRecord
 {
     protected static string $resource = ClientResource::class;
+
+
+
+    protected function getSaveFormAction(): \Filament\Actions\Action
+    {
+        return parent::getSaveFormAction()
+            ->extraAttributes(['formnovalidate' => true]);
+    }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
@@ -42,6 +53,9 @@ class EditClient extends EditRecord
 
         return $data;
     }
+
+
+
 
     protected function getHeaderActions(): array
     {
