@@ -54,6 +54,8 @@ class EnterpriseResource extends Resource
                             Forms\Components\TextInput::make('trade_name')
                                 ->label('Nome Fantasia')
                                 ->maxLength(255),
+                            Forms\Components\DatePicker::make('opening_date')
+                                ->label('Data de Abertura'),
                             Forms\Components\Textarea::make('note')
                                 ->label('Observações')
                                 ->rows(3)
@@ -203,24 +205,51 @@ class EnterpriseResource extends Resource
                     Step::make('Dados Bancários')
                         ->icon('heroicon-m-banknotes')
                         ->schema([
-                            Forms\Components\Group::make()
+                            Forms\Components\Repeater::make('enterprise_bank_accounts')
                                 ->relationship('enterprise_bank_accounts')
+                                ->label('Contas Bancárias')
+                                ->minItems(0)
                                 ->schema([
-                                    Forms\Components\TextInput::make('bank_number')
-                                        ->label('Número do Banco')
-                                        ->maxLength(10),
-                                    Forms\Components\TextInput::make('bank_name')
-                                        ->label('Nome do Banco')
-                                        ->maxLength(50),
-                                    Forms\Components\TextInput::make('agency')
-                                        ->label('Agência')
-                                        ->maxLength(20),
-                                    Forms\Components\TextInput::make('account')
-                                        ->label('Conta')
-                                        ->maxLength(20),
+                                    Forms\Components\Grid::make(2)
+                                        ->schema([
+                                            Forms\Components\TextInput::make('bank_number')
+                                                ->label('Código do banco')
+                                                ->numeric()
+                                                ->maxLength(3)
+                                                ->placeholder('000'),
+                                            Forms\Components\TextInput::make('bank_name')
+                                                ->label('Nome do banco')
+                                                ->maxLength(255)
+                                                ->placeholder('Ex: Banco do Brasil'),
+                                            Forms\Components\TextInput::make('agency')
+                                                ->label('Agência')
+                                                ->extraInputAttributes([
+                                                'oninput' => "this.value = this.value.replace(/[^0-9\-]/g, '')",
+                                            ])
+                                                ->maxLength(20)
+                                                ->placeholder('0000-0'),
+
+                                            Forms\Components\TextInput::make('account')
+                                                ->label('Conta')
+                                                ->extraInputAttributes([
+                                                'oninput' => "this.value = this.value.replace(/[^0-9\-]/g, '')",
+                                            ])
+                                                ->maxLength(20)
+                                                ->placeholder('00000-0'),
+                                        ])
+                                        ->columns(4),
                                 ])
-                                ->columns(2),
-                        ]),
+                                ->itemLabel(
+                                    fn (array $state): ?string =>
+                                    $state['bank_name']
+                                        ? "{$state['bank_name']} - Ag: {$state['agency']}"
+                                        : 'Nova conta bancária'
+                                )
+                                ->addActionLabel('Adicionar conta bancária')
+                                ->deleteAction(fn ($action) => $action->requiresConfirmation())
+                                ->reorderable()
+                                ->collapsible(),
+                ]),
 
                     Step::make('Representantes')
                         ->icon('heroicon-m-users')
@@ -291,6 +320,10 @@ class EnterpriseResource extends Resource
                 Tables\Columns\TextColumn::make('trade_name')
                     ->label('Nome Fantasia')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('opening_date')
+                    ->label('Data de Abertura')
+                    ->date('d/m/Y')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('enterprise_documents.cnpj')
                     ->label('CNPJ')
                     ->searchable(),
@@ -329,6 +362,9 @@ class EnterpriseResource extends Resource
                             ->label('Razão Social'),
                         TextEntry::make('trade_name')
                             ->label('Nome Fantasia')
+                            ->placeholder('—'),
+                        TextEntry::make('opening_date')
+                            ->label('Data de Abertura')
                             ->placeholder('—'),
                         TextEntry::make('note')
                             ->label('Observações')
@@ -394,7 +430,6 @@ class EnterpriseResource extends Resource
                     ->schema([
                         TextEntry::make('email')
                             ->label('E-mail')
-                            ->rule('email')
                             ->placeholder('—')
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                         TextEntry::make('optional_email')

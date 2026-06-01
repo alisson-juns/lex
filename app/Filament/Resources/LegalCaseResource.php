@@ -160,7 +160,8 @@ class LegalCaseResource extends Resource
 
                 Tables\Columns\TextColumn::make('party')
                     ->label('Parte')
-                    ->getStateUsing(fn (LegalCase $record): string =>
+                    ->getStateUsing(
+                        fn (LegalCase $record): string =>
                         $record->client?->name ?? $record->enterprise?->corporate_reason ?? '—'
                     )
                     ->searchable(query: function (Builder $query, string $search) {

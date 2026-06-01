@@ -18,12 +18,14 @@ class Enterprise extends Model
     protected $fillable = [
         'corporate_reason',
         'trade_name',
+        'opening_date',
         'note',
     ];
 
     protected array $activitylogFields = [
         'corporate_reason',
         'trade_name',
+        'opening_date',
         'note',
     ];
 

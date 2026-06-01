@@ -21,7 +21,7 @@ class LawyerResource extends Resource
     protected static ?string $model = Lawyer::class;
     protected static ?string $navigationIcon = 'heroicon-o-scale';
     protected static ?string $navigationGroup = 'Controle de Advogados';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
     protected static ?string $navigationLabel = 'Advogados';
     protected static ?string $modelLabel = 'Advogado';
     protected static ?string $pluralModelLabel = 'Advogados';
@@ -307,7 +307,8 @@ class LawyerResource extends Resource
                 Tables\Columns\TextColumn::make('oab')
                     ->label('OAB')
                     ->searchable()
-                    ->formatStateUsing(fn ($state, Lawyer $record) =>
+                    ->formatStateUsing(
+                        fn ($state, Lawyer $record) =>
                         $state && $record->oab_state
                             ? "{$state}/{$record->oab_state}"
                             : ($state ?? '—')
@@ -328,7 +329,8 @@ class LawyerResource extends Resource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('gray')
-                    ->tooltip(fn (Lawyer $record) =>
+                    ->tooltip(
+                        fn (Lawyer $record) =>
                         $record->user ? "Usuário: {$record->user->name}" : 'Sem acesso ao sistema'
                     ),
 
