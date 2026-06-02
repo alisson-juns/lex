@@ -75,6 +75,14 @@ class LawyerResource extends Resource
                                 ->label('Naturalidade')
                                 ->maxLength(255),
 
+                            Forms\Components\Select::make('state')
+                            ->label('UF')
+                            ->options(
+                                \App\Models\State::orderBy('abbreviation')
+                                    ->pluck('abbreviation', 'abbreviation')
+                            )
+                            ->searchable(),
+
                             Forms\Components\TextInput::make('nationality')
                                 ->label('Nacionalidade')
                                 ->default('Brasileira')
@@ -105,10 +113,13 @@ class LawyerResource extends Resource
                                     'unique'   => 'Este número de OAB já está registrado.',
                                 ]),
 
-                            Forms\Components\TextInput::make('oab_state')
+                            Forms\Components\Select::make('oab_state')
                                 ->label('Estado (OAB)')
-                                ->maxLength(2),
-
+                                ->options(
+                                    \App\Models\State::orderBy('name')
+                                        ->pluck('name', 'name')
+                                )
+                                ->searchable(),
                             Forms\Components\TextInput::make('oab_subsection')
                                 ->label('Subseção')
                                 ->maxLength(255),
@@ -238,37 +249,59 @@ class LawyerResource extends Resource
                                     Forms\Components\TextInput::make('email')
                                         ->label('E-mail')
                                         ->email()
+                                        ->rule('email')
                                         ->maxLength(255),
-
-                                    Forms\Components\TextInput::make('optional_email')
-                                        ->label('E-mail alternativo')
-                                        ->email()
-                                        ->maxLength(255),
-
                                     Forms\Components\TextInput::make('cellphone')
                                         ->label('Celular')
                                         ->mask('(99) 99999-9999')
-                                        ->maxLength(16),
-
+                                        ->maxLength(15)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                        ->dehydrateStateUsing(
+                                            fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                ? $state
+                                                : null
+                                        ),
                                     Forms\Components\TextInput::make('phone')
                                         ->label('Telefone')
                                         ->mask('(99) 9999-9999')
-                                        ->maxLength(15),
-
-                                    Forms\Components\Toggle::make('message_cell_phone')
-                                        ->label('WhatsApp (celular)')
-                                        ->default(false),
-
-                                    Forms\Components\Toggle::make('message_phone')
-                                        ->label('WhatsApp (telefone)')
-                                        ->default(false),
-
+                                        ->maxLength(14)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                        ->dehydrateStateUsing(
+                                            fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                ? $state
+                                                : null
+                                        ),
+                                    Forms\Components\TextInput::make('optional_email')
+                                        ->label('E-mail profissional')
+                                        ->email()
+                                        ->rule('email')
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('message_cell_phone')
+                                        ->label('Celular para mensagens')
+                                        ->mask('(99) 99999-9999')
+                                        ->maxLength(15)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                         ->dehydrateStateUsing(
+                                             fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                 ? $state
+                                                 : null
+                                         ),
+                                    Forms\Components\TextInput::make('message_phone')
+                                        ->label('Telefone para mensagens')
+                                        ->mask('(99) 9999-9999')
+                                        ->maxLength(14)
+                                        ->formatStateUsing(fn ($state) => blank($state) ? '' : $state)
+                                        ->dehydrateStateUsing(
+                                            fn ($state) => filled(preg_replace('/\D/', '', $state ?? ''))
+                                                ? $state
+                                                : null
+                                        ),
                                     Forms\Components\Textarea::make('note')
                                         ->label('Observações')
-                                        ->rows(2)
+                                        ->rows(3)
                                         ->columnSpanFull(),
                                 ])
-                                ->columns(2),
+                                ->columns(3),
                         ]),
 
                     Step::make('Acesso ao Sistema')

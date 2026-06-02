@@ -29,6 +29,7 @@ class Lawyer extends Model
         'father',
         'mother',
         'place_of_birth',
+        'state',
         'nationality',
         'marital_status',
         'note',
