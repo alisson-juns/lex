@@ -317,20 +317,30 @@ class EnterpriseResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('corporate_reason')
-                    ->label('Razão Social')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('enterprise_documents.cnpj')
-                    ->label('CNPJ')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('enterprise_contacts.cellphone')
-                    ->label('Celular')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('enterprise_contacts.email')
-                    ->label('E-mail')
-                    ->searchable(),
+                Tables\Columns\Layout\Split::make([
+                    Tables\Columns\TextColumn::make('corporate_reason')
+                        ->label('Razão Social')
+                        ->searchable()
+                        ->sortable()
+                        ->weight(\Filament\Support\Enums\FontWeight::Bold),
 
+                    Tables\Columns\Layout\Stack::make([
+                        Tables\Columns\TextColumn::make('enterprise_documents.cnpj')
+                            ->label('CNPJ')
+                            ->icon('heroicon-m-building-office'),
+                    ])->space(1),
+
+                    Tables\Columns\Layout\Stack::make([
+                        Tables\Columns\TextColumn::make('enterprise_contacts.cellphone')
+                            ->label('Celular')
+                            ->icon('heroicon-m-phone')
+                            ->placeholder('—'),
+                        Tables\Columns\TextColumn::make('enterprise_contacts.email')
+                            ->label('E-mail')
+                            ->icon('heroicon-m-envelope')
+                            ->placeholder('—'),
+                    ])->space(1),
+                ]),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),

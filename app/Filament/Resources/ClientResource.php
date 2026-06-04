@@ -571,17 +571,31 @@ class ClientResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Nome')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('client_documents.cpf')
-                    ->label('CPF'),
-                Tables\Columns\TextColumn::make('client_contacts.cellphone')
-                    ->label('Celular'),
-                Tables\Columns\TextColumn::make('client_contacts.email')
-                    ->label('E-mail'),
-            ])
+    Tables\Columns\Layout\Split::make([
+        Tables\Columns\TextColumn::make('name')
+            ->label('Nome')
+            ->searchable()
+            ->sortable()
+            ->weight(\Filament\Support\Enums\FontWeight::Bold),
+
+        Tables\Columns\Layout\Stack::make([
+            Tables\Columns\TextColumn::make('client_documents.cpf')
+                ->label('CPF')
+                ->icon('heroicon-m-identification'),
+        ])->space(1),
+
+        Tables\Columns\Layout\Stack::make([
+            Tables\Columns\TextColumn::make('client_contacts.cellphone')
+                ->label('Celular')
+                ->icon('heroicon-m-phone')
+                ->placeholder('—'),
+            Tables\Columns\TextColumn::make('client_contacts.email')
+                ->label('E-mail')
+                ->icon('heroicon-m-envelope')
+                ->placeholder('—'),
+        ])->space(1),
+    ]),
+])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])

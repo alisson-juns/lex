@@ -41,6 +41,8 @@ class LegalCaseResource extends Resource
 
                     Forms\Components\TextInput::make('case_number')
                         ->label('Nº do Processo')
+                        ->placeholder('Ex: 0000000-00.0000.0.00.0000')
+                        ->mask("0000000-00.0000.0.00.0000")
                         ->maxLength(255),
                 ]),
 
@@ -151,31 +153,30 @@ class LegalCaseResource extends Resource
                 Tables\Columns\TextColumn::make('case_number')
                     ->label('Nº Processo')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                    ->description(
+                        fn (LegalCase $record): string =>
+                        $record->client?->name ?? $record->enterprise?->corporate_reason ?? '—'
+                    ),
 
                 Tables\Columns\TextColumn::make('folder_number')
                     ->label('Nº Pasta')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('party')
-                    ->label('Parte')
-                    ->getStateUsing(
-                        fn (LegalCase $record): string =>
-                        $record->client?->name ?? $record->enterprise?->corporate_reason ?? '—'
-                    )
-                    ->searchable(query: function (Builder $query, string $search) {
-                        $query->whereHas('client', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                              ->orWhereHas('enterprise', fn ($q) => $q->where('corporate_reason', 'like', "%{$search}%"));
-                    }),
-
                 Tables\Columns\TextColumn::make('lawyers.name')
                     ->label('Advogado(s)')
                     ->listWithLineBreaks()
                     ->limitList(2),
 
+                Tables\Columns\TextColumn::make('opponent_name')
+                    ->label('Adverso')
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('location')
                     ->label('Localização')
+                    ->wrap()
                     ->getStateUsing(fn (LegalCase $record): string => collect([
                         $record->courtNumber?->number,
                         $record->courtName?->name,
@@ -196,11 +197,6 @@ class LegalCaseResource extends Resource
                         'secondary' => CaseStatus::Archived->value,
                     ]),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Criado em')
-                    ->dateTime('d/m/Y')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -218,68 +214,9 @@ class LegalCaseResource extends Resource
             ])
             ->actions([
 
-                Tables\Actions\Action::make('create_hearing')
-                    ->label('Inserir Audiência')
-                    ->icon('heroicon-o-calendar-days')
-                    ->color('gray')
-                    ->modalHeading(fn (LegalCase $record) => "Nova audiência — {$record->case_number}")
-                    ->modalWidth('2xl')
-                    ->form([
-                Forms\Components\Grid::make(2)
-                ->schema([
-                Forms\Components\TextInput::make('description')
-                    ->label('Descrição')
-                    ->required()
-                    ->maxLength(255)
-                    ->columnSpanFull(),
-
-                Forms\Components\DatePicker::make('date')
-                    ->label('Data')
-                    ->required()
-                    ->displayFormat('d/m/Y'),
-
-                Forms\Components\TimePicker::make('time')
-                    ->label('Hora')
-                    ->required()
-                    ->seconds(false),
-
-                Forms\Components\TextInput::make('location')
-                    ->label('Local')
-                    ->required()
-                    ->maxLength(255)
-                    ->columnSpanFull(),
-
-                Forms\Components\Select::make('lawyer_id')
-                    ->label('Advogado responsável')
-                    ->options(
-                        fn (LegalCase $record) =>
-                            $record->lawyers()->orderBy('name')->pluck('name', 'lawyers.id')
-                    )
-                    ->searchable(),
-
-                Forms\Components\Select::make('status')
-                    ->label('Status')
-                    ->options(
-                        collect(HearingStatus::cases())
-                            ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
-                    )
-                    ->default(HearingStatus::Scheduled->value)
-                    ->required(),
-
-                Forms\Components\Textarea::make('note')
-                    ->label('Observações')
-                    ->rows(3)
-                    ->columnSpanFull(),
-            ]),
-                    ])
-                    ->action(function (LegalCase $record, array $data) {
-                        $record->hearings()->create($data);
-                    })
-                    ->successNotificationTitle('Audiência inserida com sucesso'),
-
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
