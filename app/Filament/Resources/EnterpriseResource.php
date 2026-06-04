@@ -5,6 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EnterpriseResource\Pages;
 use App\Models\Enterprise;
 use App\Models\EnterpriseDocument;
+use App\Models\CourtName;
+use App\Models\CourtNumber;
+use App\Models\Forum;
+use App\Models\Lawyer;
+use App\Enums\CaseStatus;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms;
@@ -32,7 +37,6 @@ class EnterpriseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\EnterpriseResource\RelationManagers\LegalCasesRelationManager::class,
             \App\Filament\Resources\EnterpriseResource\RelationManagers\LegalCasesRelationManager::class,
             \App\Filament\Resources\EnterpriseResource\RelationManagers\EnterprisePowersOfAttorneyRelationManager::class,
             \App\Filament\Resources\EnterpriseResource\RelationManagers\EnterpriseFeeAgreementsRelationManager::class,
@@ -317,20 +321,16 @@ class EnterpriseResource extends Resource
                     ->label('Razão Social')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('trade_name')
-                    ->label('Nome Fantasia')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('opening_date')
-                    ->label('Data de Abertura')
-                    ->date('d/m/Y')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('enterprise_documents.cnpj')
                     ->label('CNPJ')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Cadastrado em')
-                    ->date('d/m/Y')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('enterprise_contacts.cellphone')
+                    ->label('Celular')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('enterprise_contacts.email')
+                    ->label('E-mail')
+                    ->searchable(),
+
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -340,6 +340,7 @@ class EnterpriseResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -434,7 +435,6 @@ class EnterpriseResource extends Resource
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                         TextEntry::make('optional_email')
                             ->label('E-mail Alternativo')
-                            ->rule('email')
                             ->placeholder('—')
                             ->url(fn ($state) => $state ? "mailto:{$state}" : null),
                         TextEntry::make('cellphone')
