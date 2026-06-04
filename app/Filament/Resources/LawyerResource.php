@@ -56,11 +56,11 @@ class LawyerResource extends Resource
                             Forms\Components\Select::make('marital_status')
                                 ->label('Estado civil')
                                 ->options([
-                                    'single'    => 'Solteiro(a)',
-                                    'married'   => 'Casado(a)',
-                                    'separated' => 'Separado(a)',
-                                    'divorced'  => 'Divorciado(a)',
-                                    'widowed'   => 'Viúvo(a)',
+                                    'Solteiro(a)'    => 'Solteiro(a)',
+                                    'Casado(a)'      => 'Casado(a)',
+                                    'Separado(a)'    => 'Separado(a)',
+                                    'Divorciado(a)'  => 'Divorciado(a)',
+                                    'Viúvo(a)'       => 'Viúvo(a)',
                                 ]),
 
                             Forms\Components\TextInput::make('father')

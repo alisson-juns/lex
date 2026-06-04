@@ -22,6 +22,7 @@
         .content {
             text-align: justify;
             line-height: 1.7;
+            padding-bottom: 60px;
         }
         .content p {
             margin-bottom: 12px;

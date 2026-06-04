@@ -92,11 +92,10 @@ Todos os documentos seguem o mesmo fluxo:
 - FKs longas nomeadas manualmente para respeitar limite de 64 chars do MySQL
 - Templates PF e PJ sempre em tabelas separadas para evitar contaminação de modelos
 
+## Testes e correções
+
+- [ ] Alterar a forma como os documentos são armazenados do BD e como são exibidos no RelationManager
+
 ## O que falta construir
 
-- [ ] Dashboard customizada utilizar plugin Nord Theme
-
-## Extras não prioritários
-
-- [ ] Filament Spatie Google Fonts
-- [ ] Plugin Curator - media manager
+- [ ] Dashboard customizada (somente no final)

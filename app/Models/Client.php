@@ -101,4 +101,9 @@ class Client extends Model
     {
         return $this->hasMany(GratuityDeclaration::class);
     }
+
+    public function feeAgreements(): HasMany
+    {
+        return $this->hasMany(FeeAgreement::class);
+    }
 }

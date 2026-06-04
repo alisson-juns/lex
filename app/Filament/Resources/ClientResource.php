@@ -42,6 +42,7 @@ class ClientResource extends Resource
             \App\Filament\Resources\ClientResource\RelationManagers\LegalCasesRelationManager::class,
             \App\Filament\Resources\ClientResource\RelationManagers\PowersOfAttorneyRelationManager::class,
             \App\Filament\Resources\ClientResource\RelationManagers\GratuityDeclarationsRelationManager::class,
+            \App\Filament\Resources\ClientResource\RelationManagers\FeeAgreementsRelationManager::class,
             ActivitylogRelationManager::class,
 
         ];
