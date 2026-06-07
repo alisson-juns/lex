@@ -123,6 +123,7 @@ class ViewClient extends ViewRecord
                             'user_id'                   => auth()->id(),
                             'specific_text'             => $data['specific_text'],
                             'fee_percentage'            => $data['fee_percentage'],
+                            'is_draft'                  => true,
                         ]);
 
                         $agreement->lawyers()->sync($data['lawyer_ids']);
@@ -139,13 +140,13 @@ class ViewClient extends ViewRecord
                     ->label('Declaração de Gratuidade')
                     ->icon('heroicon-o-document-text')
                     ->form([
-                        Forms\Components\Select::make('gratuity_declaration_template_id')
-                            ->label('Modelo')
-                            ->options(
-                                GratuityDeclarationTemplate::where('is_active', true)->pluck('name', 'id')
-                            )
-                            ->required(),
-                    ])
+                                            Forms\Components\Select::make('gratuity_declaration_template_id')
+                                                ->label('Modelo')
+                                                ->options(
+                                                    GratuityDeclarationTemplate::where('is_active', true)->pluck('name', 'id')
+                                                )
+                                                ->required(),
+                                        ])
                     ->action(function (array $data, GratuityDeclarationService $service): void {
                         $declaration = GratuityDeclaration::create([
                             'client_id'                        => $this->record->id,

@@ -21,10 +21,12 @@ class FeeAgreement extends Model
         'fee_percentage',
         'rendered_body',
         'pdf_path',
+        'is_draft',
     ];
 
     protected $casts = [
         'fee_percentage' => 'decimal:2',
+        'is_draft' => 'boolean',
     ];
 
     protected array $activitylogFields = [
