@@ -18,11 +18,13 @@ class EnterpriseFeeAgreement extends Model
         'specific_text',
         'fee_percentage',
         'rendered_body',
+        'is_draft',
         'pdf_path',
     ];
 
     protected $casts = [
         'fee_percentage' => 'decimal:2',
+        'is_draft' => 'boolean',
     ];
 
     public function enterprise(): BelongsTo

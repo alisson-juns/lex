@@ -4,6 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use App\Models\FeeAgreement;
+use App\Models\EnterpriseFeeAgreement;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -12,6 +13,12 @@ Artisan::command('inspire', function () {
 
 Schedule::call(function () {
     FeeAgreement::where('is_draft', true)
+        ->where('created_at', '<', now()->subDay())
+        ->delete();
+})->daily();
+
+Schedule::call(function () {
+    EnterpriseFeeAgreement::where('is_draft', true)
         ->where('created_at', '<', now()->subDay())
         ->delete();
 })->daily();

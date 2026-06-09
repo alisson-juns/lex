@@ -26,6 +26,14 @@ class EditEnterpriseFeeAgreement extends EditRecord
         ];
     }
 
+    // Marca o contrato como definitivo sempre que for salvo
+    protected function afterSave(): void
+    {
+        if ($this->record->is_draft) {
+            $this->record->update(['is_draft' => false]);
+        }
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('edit', ['record' => $this->record->id]);
@@ -33,6 +41,6 @@ class EditEnterpriseFeeAgreement extends EditRecord
 
     protected function getSavedNotificationTitle(): ?string
     {
-        return 'Contrato atualizado';
+        return 'Contrato salvo';
     }
 }

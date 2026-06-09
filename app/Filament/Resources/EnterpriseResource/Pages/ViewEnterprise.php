@@ -139,6 +139,7 @@ class ViewEnterprise extends ViewRecord
                             'user_id'                              => auth()->id(),
                             'specific_text'                        => $data['specific_text'],
                             'fee_percentage'                       => $data['fee_percentage'],
+                            'is_draft'                             => true,
                         ]);
 
                         $agreement->lawyers()->sync($data['lawyer_ids']);

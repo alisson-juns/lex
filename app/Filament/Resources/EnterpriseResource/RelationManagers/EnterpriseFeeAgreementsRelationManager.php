@@ -6,6 +6,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
+use Illuminate\Database\Eloquent\Builder;
 
 class EnterpriseFeeAgreementsRelationManager extends RelationManager
 {
@@ -15,6 +16,7 @@ class EnterpriseFeeAgreementsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('is_draft', false))
             ->columns([
                 Tables\Columns\TextColumn::make('template.name')
                     ->label('Tipo'),
