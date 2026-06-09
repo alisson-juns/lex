@@ -28,9 +28,16 @@ class EditPowerOfAttorney extends EditRecord
         ];
     }
 
+    // Marca a procuração como definitiva sempre que for salva
+    protected function afterSave(): void
+    {
+        if ($this->record->is_draft) {
+            $this->record->update(['is_draft' => false]);
+        }
+    }
+
     protected function getRedirectUrl(): string
     {
-        // Após salvar manualmente, fica na página
         return $this->getResource()::getUrl('edit', ['record' => $this->record->id]);
     }
 

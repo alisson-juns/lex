@@ -20,10 +20,19 @@ class EditGratuityDeclaration extends EditRecord
                 ->color('success')
                 ->action(function (GratuityDeclarationService $service): void {
                     $this->save();
+
                     $url = route('gratuity-declaration.pdf', $this->record->id);
                     $this->js("window.open('{$url}', '_blank')");
                 }),
         ];
+    }
+
+    // Marca a declaração como definitiva sempre que for salva
+    protected function afterSave(): void
+    {
+        if ($this->record->is_draft) {
+            $this->record->update(['is_draft' => false]);
+        }
     }
 
     protected function getRedirectUrl(): string

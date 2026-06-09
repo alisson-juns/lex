@@ -6,6 +6,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
+use Illuminate\Database\Eloquent\Builder;
 
 class PowersOfAttorneyRelationManager extends RelationManager
 {
@@ -15,6 +16,7 @@ class PowersOfAttorneyRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('is_draft', false))
             ->columns([
                 Tables\Columns\TextColumn::make('template.name')
                     ->label('Tipo'),
@@ -34,11 +36,19 @@ class PowersOfAttorneyRelationManager extends RelationManager
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
+
+                Action::make('edit')
+                    ->label('Editar')
+                    ->icon('heroicon-o-pencil')
+                    ->color('warning')
+                    ->url(fn ($record) => \App\Filament\Resources\PowerOfAttorneyResource::getUrl('edit', ['record' => $record->id])),
+
                 Action::make('pdf')
                     ->label('Abrir PDF')
                     ->icon('heroicon-o-document')
                     ->color('gray')
-                    ->url(fn ($record) => $record->pdf_path
+                    ->url(
+                        fn ($record) => $record->pdf_path
                         ? \Storage::disk('public')->url($record->pdf_path)
                         : route('power-of-attorney.pdf', $record->id)
                     )

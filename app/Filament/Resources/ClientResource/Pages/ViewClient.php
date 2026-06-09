@@ -67,6 +67,7 @@ class ViewClient extends ViewRecord
                             'power_of_attorney_template_id' => $data['power_of_attorney_template_id'],
                             'user_id'                       => auth()->id(),
                             'specific_text'                 => $data['specific_text'],
+                            'is_draft'                      => true,
                         ]);
 
                         $poa->lawyers()->sync($data['lawyer_ids']);
@@ -152,6 +153,7 @@ class ViewClient extends ViewRecord
                             'client_id'                        => $this->record->id,
                             'gratuity_declaration_template_id' => $data['gratuity_declaration_template_id'],
                             'user_id'                          => auth()->id(),
+                            'is_draft'                         => true,
                         ]);
 
                         $declaration->update(['rendered_body' => $service->render($declaration)]);

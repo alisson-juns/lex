@@ -20,10 +20,19 @@ class EditEnterprisePowerOfAttorney extends EditRecord
                 ->color('success')
                 ->action(function (): void {
                     $this->save();
+
                     $url = route('enterprise-power-of-attorney.pdf', $this->record->id);
                     $this->js("window.open('{$url}', '_blank')");
                 }),
         ];
+    }
+
+    // Marca a procuração PJ como definitiva sempre que for salva
+    protected function afterSave(): void
+    {
+        if ($this->record->is_draft) {
+            $this->record->update(['is_draft' => false]);
+        }
     }
 
     protected function getRedirectUrl(): string

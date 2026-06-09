@@ -15,6 +15,11 @@ class GratuityDeclaration extends Model
         'user_id',
         'rendered_body',
         'pdf_path',
+        'is_draft',
+    ];
+
+    protected $casts = [
+        'is_draft' => 'boolean',
     ];
 
     public function client(): BelongsTo

@@ -21,6 +21,11 @@ class EnterprisePowerOfAttorney extends Model
         'specific_text',
         'rendered_body',
         'pdf_path',
+        'is_draft',
+    ];
+
+    protected $casts = [
+        'is_draft' => 'boolean',
     ];
 
     protected array $activitylogFields = [

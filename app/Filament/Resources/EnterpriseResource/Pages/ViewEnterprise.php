@@ -75,6 +75,7 @@ class ViewEnterprise extends ViewRecord
                             'enterprise_representative_id'             => $data['enterprise_representative_id'],
                             'user_id'                                  => auth()->id(),
                             'specific_text'                            => $data['specific_text'],
+                            'is_draft'                                 => true,
                         ]);
 
                         $poa->lawyers()->sync($data['lawyer_ids']);
