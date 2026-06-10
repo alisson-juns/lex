@@ -8,8 +8,10 @@ use Filament\Pages\Page;
 use Illuminate\Validation\ValidationException;
 use App\Models\Hearing;
 use App\Models\Task;
+use App\Models\Deadline;
 use App\Observers\HearingObserver;
 use App\Observers\TaskObserver;
+use App\Observers\DeadlineObserver;
 use App\Policies\ActivityPolicy;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Models\Activity;
@@ -30,8 +32,8 @@ class AppServiceProvider extends ServiceProvider
 
         Hearing::observe(HearingObserver::class);
         Task::observe(TaskObserver::class);
+        Deadline::observe(DeadlineObserver::class);
         Gate::policy(Activity::class, ActivityPolicy::class);
-
 
     }
 

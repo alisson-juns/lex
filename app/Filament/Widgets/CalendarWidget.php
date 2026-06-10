@@ -86,6 +86,68 @@ class CalendarWidget extends FullCalendarWidget
                 ],
             ]);
 
+
+        $deadlines = \App\Models\Deadline::query()
+            ->where(function ($q) use ($fetchInfo) {
+                $q->whereBetween('fatal_date', [$fetchInfo['start'], $fetchInfo['end']])
+                  ->orWhereBetween('internal_date', [$fetchInfo['start'], $fetchInfo['end']]);
+            })
+            ->whereNotIn('status', [
+                \App\Enums\DeadlineStatus::Completed->value,
+                \App\Enums\DeadlineStatus::Cancelled->value,
+            ])
+            ->with('legalCase', 'lawyers')
+            ->get();
+
+        $deadlineEvents = [];
+
+        foreach ($deadlines as $deadline) {
+            // Evento do prazo FATAL (vermelho)
+            $deadlineEvents[] = [
+                'id'              => 'deadline-fatal-' . $deadline->id,
+                'title'           => '⚠️ Prazo fatal — ' . $deadline->deadline_type->label(),
+                'start'           => $deadline->fatal_date->toDateString(),
+                'allDay'          => true,
+                'backgroundColor' => '#dc2626',
+                'borderColor'     => '#b91c1c',
+                'textColor'       => '#ffffff',
+                'editable'        => false,
+                'extendedProps'   => [
+                    'type'    => 'deadline',
+                    'status'  => $deadline->status->label(),
+                    'color'   => '#dc2626',
+                    'process' => $deadline->legalCase?->case_number,
+                    'lawyers' => $deadline->lawyers->pluck('name')->join(', '),
+                    'viewUrl' => \App\Filament\Resources\DeadlineResource::getUrl('view', ['record' => $deadline->id]),
+                    'editUrl' => \App\Filament\Resources\DeadlineResource::getUrl('edit', ['record' => $deadline->id]),
+                ],
+            ];
+
+            // Evento do prazo INTERNO (laranja), só se preenchido
+            if ($deadline->internal_date) {
+                $deadlineEvents[] = [
+                    'id'              => 'deadline-internal-' . $deadline->id,
+                    'title'           => '🕒 Prazo interno — ' . $deadline->deadline_type->label(),
+                    'start'           => $deadline->internal_date->toDateString(),
+                    'allDay'          => true,
+                    'backgroundColor' => '#ea580c',
+                    'borderColor'     => '#c2410c',
+                    'textColor'       => '#ffffff',
+                    'editable'        => false,
+                    'extendedProps'   => [
+                        'type'    => 'deadline',
+                        'status'  => $deadline->status->label(),
+                        'color'   => '#ea580c',
+                        'process' => $deadline->legalCase?->case_number,
+                        'lawyers' => $deadline->lawyers->pluck('name')->join(', '),
+                        'viewUrl' => \App\Filament\Resources\DeadlineResource::getUrl('view', ['record' => $deadline->id]),
+                        'editUrl' => \App\Filament\Resources\DeadlineResource::getUrl('edit', ['record' => $deadline->id]),
+                    ],
+                ];
+            }
+        }
+
+
         // ── Feriados ──────────────────────────────────────────────────
         $settings = FirmSetting::instance();
 
@@ -102,12 +164,14 @@ class CalendarWidget extends FullCalendarWidget
 
         if ($user && $user->googleToken) {
             // IDs do LexFirma já sincronizados para este usuário — evita duplicação
+
+            // dentro do if ($user && $user->googleToken):
             $lexIds = HearingGoogleEvent::where('user_id', $user->id)
                 ->pluck('google_event_id')
-                ->merge(
-                    TaskGoogleEvent::where('user_id', $user->id)->pluck('google_event_id')
-                )
+                ->merge(TaskGoogleEvent::where('user_id', $user->id)->pluck('google_event_id'))
+                ->merge(DeadlineGoogleEvent::where('user_id', $user->id)->pluck('google_event_id'))
                 ->toArray();
+
 
             $all = app(GoogleCalendarService::class)
                 ->getEventsForCalendar($user, $fetchInfo['start'], $fetchInfo['end']);
@@ -117,7 +181,15 @@ class CalendarWidget extends FullCalendarWidget
             $googleEvents = array_values($all);
         }
 
-        return array_merge($hearings->toArray(), $tasks->toArray(), $holidays, $googleEvents);
+
+        return array_merge(
+            $hearings->toArray(),
+            $tasks->toArray(),
+            $deadlineEvents,
+            $holidays,
+            $googleEvents
+        );
+
     }
 
     // ─────────────────────────────────────────────
@@ -585,6 +657,9 @@ class CalendarWidget extends FullCalendarWidget
                 const start  = event.start;
                 const color  = props.color || '#6b7280';
 
+                const isDeadline = props.type === 'deadline';
+
+
                 const dateStr = start
                     ? start.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
                     : '';
@@ -639,7 +714,7 @@ class CalendarWidget extends FullCalendarWidget
                     <div class="fcp-footer">
                         <a href="${props.viewUrl}" class="fcp-btn fcp-btn-view">Ver detalhes</a>
                         <a href="${props.editUrl}" class="fcp-btn fcp-btn-edit" style="background:${color}">Editar</a>
-                        <button class="fcp-btn fcp-btn-delete" id="fcp-delete-btn">Excluir</button>
+                        ${isDeadline ? '' : `<button class="fcp-btn fcp-btn-delete" id="fcp-delete-btn">Excluir</button>`}
                     </div>
                 `;
                 document.body.appendChild(popover);
@@ -666,16 +741,19 @@ class CalendarWidget extends FullCalendarWidget
                     popover.remove();
                 });
 
-                document.getElementById('fcp-delete-btn').addEventListener('click', function(ev) {
-                    ev.stopPropagation();
-                    const tipo  = props.type === 'hearing' ? 'audiência' : 'tarefa';
-                    const label = event.title.replace(/^[^\s]+\s/, '');
-                    if (! confirm(`Excluir ${tipo} "${label}"?\n\nEsta ação pode ser desfeita pelo administrador.`)) {
-                        return;
-                    }
-                    popover.remove();
-                    Livewire.dispatch('delete-calendar-event', { eventId: event.id, type: props.type });
-                });
+                const delBtn = document.getElementById('fcp-delete-btn');
+                if (delBtn) {
+                    delBtn.addEventListener('click', function(ev) {
+                        ev.stopPropagation();
+                        const tipo  = props.type === 'hearing' ? 'audiência' : 'tarefa';
+                        const label = event.title.replace(/^[^\s]+\s/, '');
+                        if (! confirm(`Excluir ${tipo} "${label}"?\n\nEsta ação pode ser desfeita pelo administrador.`)) {
+                            return;
+                        }
+                        popover.remove();
+                        Livewire.dispatch('delete-calendar-event', { eventId: event.id, type: props.type });
+                    });
+                }
             });
 
             if (!window._fcPopoverOutside) {

@@ -8,6 +8,8 @@ use App\Models\HearingGoogleEvent;
 use App\Models\Task;
 use App\Models\TaskGoogleEvent;
 use App\Models\User;
+use App\Models\Deadline;
+use App\Models\DeadlineGoogleEvent;
 use Carbon\Carbon;
 use Google\Client as GoogleClient;
 use Google\Service\Calendar as GoogleCalendar;
@@ -240,6 +242,53 @@ class GoogleCalendarService
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // Prazos — sincroniza para TODOS os usuários com token
+    // Cada prazo gera 2 eventos (fatal + interno), ambos dia inteiro
+    // ─────────────────────────────────────────────────────────────────
+
+    public function createDeadlineEvents(Deadline $deadline): void
+    {
+        $tokens = GoogleToken::with('user')->get();
+
+        foreach ($tokens as $token) {
+            $this->syncDeadlineEventsForUser($deadline, $token->user);
+        }
+    }
+
+    public function updateDeadlineEvents(Deadline $deadline): void
+    {
+        // Update e create seguem o mesmo caminho: syncDeadlineEventsForUser
+        // usa updateOrCreate na pivot e insert/update conforme o pivot exista.
+        $tokens = GoogleToken::with('user')->get();
+
+        foreach ($tokens as $token) {
+            $this->syncDeadlineEventsForUser($deadline, $token->user);
+        }
+    }
+
+    public function deleteDeadlineEvents(Deadline $deadline): void
+    {
+        $pivots = DeadlineGoogleEvent::where('deadline_id', $deadline->id)->with('user')->get();
+
+        foreach ($pivots as $pivot) {
+            $client = $this->getClient($pivot->user);
+            if (! $client) {
+                continue;
+            }
+
+            try {
+                $service    = new GoogleCalendar($client);
+                $calendarId = $pivot->user->googleToken->google_calendar_id ?? 'primary';
+                $service->events->delete($calendarId, $pivot->google_event_id);
+            } catch (\Exception $e) {
+                Log::error("Google delete deadline #{$deadline->id} ({$pivot->date_type}) user #{$pivot->user_id}: " . $e->getMessage());
+            }
+        }
+
+        DeadlineGoogleEvent::where('deadline_id', $deadline->id)->delete();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     // Leitura — CalendarWidget
     // ─────────────────────────────────────────────────────────────────
 
@@ -267,12 +316,17 @@ class GoogleCalendarService
             ]);
 
             // IDs de eventos criados pelo LexFirma para este usuário
+
             $lexIds = HearingGoogleEvent::where('user_id', $user->id)
-                ->pluck('google_event_id')
-                ->merge(
-                    TaskGoogleEvent::where('user_id', $user->id)->pluck('google_event_id')
-                )
-                ->toArray();
+                            ->pluck('google_event_id')
+                            ->merge(
+                                TaskGoogleEvent::where('user_id', $user->id)->pluck('google_event_id')
+                            )
+                            ->merge(
+                                DeadlineGoogleEvent::where('user_id', $user->id)->pluck('google_event_id')
+                            )
+                            ->toArray();
+
 
             $events = [];
 
@@ -389,6 +443,129 @@ class GoogleCalendarService
         } catch (\Exception $e) {
             Log::error("Google create task #{$task->id} user #{$user->id}: " . $e->getMessage());
         }
+
+    }
+
+    /**
+     * Sincroniza os dois eventos do prazo (fatal + interno) para um usuário.
+     * - Cria ou atualiza o evento fatal sempre.
+     * - Cria ou atualiza o interno se houver data; se a data foi removida,
+     *   apaga o evento interno do Google e a pivot correspondente.
+     */
+    private function syncDeadlineEventsForUser(Deadline $deadline, User $user): void
+    {
+        $client = $this->getClient($user);
+        if (! $client) {
+            return;
+        }
+
+        $service    = new GoogleCalendar($client);
+        $calendarId = $user->googleToken->google_calendar_id ?? 'primary';
+
+        // ── FATAL (sempre existe) ──────────────────────────────────
+        $this->upsertDeadlineEvent(
+            $service,
+            $calendarId,
+            $deadline,
+            $user,
+            'fatal',
+            '⚠️ Prazo fatal — ' . $deadline->deadline_type->label(),
+            $deadline->fatal_date,
+            [['method' => 'popup', 'minutes' => 1440], ['method' => 'email', 'minutes' => 2880]]
+        );
+
+        // ── INTERNO (opcional) ─────────────────────────────────────
+        if ($deadline->internal_date) {
+            $this->upsertDeadlineEvent(
+                $service,
+                $calendarId,
+                $deadline,
+                $user,
+                'internal',
+                '🕒 Prazo interno — ' . $deadline->deadline_type->label(),
+                $deadline->internal_date,
+                [['method' => 'popup', 'minutes' => 1440]]
+            );
+        } else {
+            // Data interna foi removida — limpa evento e pivot, se existirem
+            $pivot = DeadlineGoogleEvent::where('deadline_id', $deadline->id)
+                ->where('user_id', $user->id)
+                ->where('date_type', 'internal')
+                ->first();
+
+            if ($pivot) {
+                try {
+                    $service->events->delete($calendarId, $pivot->google_event_id);
+                } catch (\Exception $e) {
+                    Log::error("Google delete deadline interno #{$deadline->id} user #{$user->id}: " . $e->getMessage());
+                }
+                $pivot->delete();
+            }
+        }
+    }
+
+    private function upsertDeadlineEvent(
+        GoogleCalendar $service,
+        string $calendarId,
+        Deadline $deadline,
+        User $user,
+        string $dateType,
+        string $summary,
+        Carbon $date,
+        array $reminders
+    ): void {
+        $pivot = DeadlineGoogleEvent::where('deadline_id', $deadline->id)
+            ->where('user_id', $user->id)
+            ->where('date_type', $dateType)
+            ->first();
+
+        $event = new GoogleEvent([
+            'summary'     => $summary,
+            'description' => $this->buildDeadlineDescription($deadline),
+            // dia inteiro: time = null → buildDateTime usa setDate()
+            'start'       => $this->buildDateTime($date, null),
+            'end'         => $this->buildDateTime($date, null, 1), // +1 dia para all-day
+            'reminders'   => [
+                'useDefault' => false,
+                'overrides'  => $reminders,
+            ],
+        ]);
+
+        try {
+            if ($pivot) {
+                $service->events->update($calendarId, $pivot->google_event_id, $event);
+            } else {
+                $created = $service->events->insert($calendarId, $event);
+                DeadlineGoogleEvent::create([
+                    'deadline_id'     => $deadline->id,
+                    'user_id'         => $user->id,
+                    'date_type'       => $dateType,
+                    'google_event_id' => $created->getId(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("Google upsert deadline #{$deadline->id} ({$dateType}) user #{$user->id}: " . $e->getMessage());
+        }
+    }
+
+    private function buildDeadlineDescription(Deadline $deadline): string
+    {
+        $lines = ['Criado pelo LexFirma'];
+        $lines[] = 'Tipo: ' . $deadline->deadline_type->label();
+        if ($deadline->legalCase?->case_number) {
+            $lines[] = 'Processo: ' . $deadline->legalCase->case_number;
+        }
+        $lines[] = 'Prazo fatal: ' . $deadline->fatal_date->format('d/m/Y');
+        if ($deadline->internal_date) {
+            $lines[] = 'Prazo interno: ' . $deadline->internal_date->format('d/m/Y');
+        }
+        if ($deadline->lawyers->isNotEmpty()) {
+            $lines[] = 'Advogado(s): ' . $deadline->lawyers->pluck('name')->join(', ');
+        }
+        if ($deadline->note) {
+            $lines[] = 'Obs: ' . $deadline->note;
+        }
+        return implode("\n", $lines);
     }
 
     private function makeBaseClient(): GoogleClient
