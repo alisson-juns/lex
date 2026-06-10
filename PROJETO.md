@@ -26,6 +26,7 @@ Advogados (acesso inicial). Controle de permissões via Filament Shield.
 - **Advogados** (`LawyerResource`): cadastro completo com dados pessoais, OAB, documentos, endereço, contatos. Vinculado opcionalmente a um usuário do sistema.
 - **Funcionários** (`EmployeeResource`): cadastro com dados pessoais, documentos, endereço, contatos e cargo (Occupation).
 - **Tarefas** (`TaskResource`): vinculada opcionalmente a um processo. Campos: título, descrição, prazo, hora, advogado(s) responsáveis, status.
+- **Prazos** (`DeadlineResource`): módulo separado das Tarefas por implicação de responsabilidade civil (prazo fatal perdido). Vinculado **obrigatoriamente** a um processo. Campos: processo, tipo de prazo (enum `DeadlineType`), prazo fatal (obrigatório), prazo interno (opcional, validado `before_or_equal:fatal_date`), advogado(s) responsáveis (sugeridos automaticamente a partir do pivot do processo ao selecioná-lo), status (enum `DeadlineStatus`), observações. Coluna calculada "Dias restantes" com cor por proximidade (danger ≤3 dias/vencido, warning ≤7). Ação rápida "Cumprir". Data fatal digitada manualmente (sem cálculo automático — complexidade de feriados). Espelha o padrão `HearingResource`.
 - **Usuários**: gerenciado pelo Filament nativo + Shield.
 
 ### Documentos — Pessoa Física
@@ -57,6 +58,7 @@ Advogados (acesso inicial). Controle de permissões via Filament Shield.
 - Enums com método `label()` em português para status
 - Configurações do escritório (`FirmSettings`): nome, endereço, logo, posição do logo, cidades/estados para feriados
 - Calendário (`CalendarPage`) com widget de audiências e tarefas próximas
+- Calendário exibe prazos como eventos de dia inteiro: dois por prazo — fatal (vermelho) e interno (laranja, só se preenchido). Prazo não pode ser excluído pelo popover do calendário (botão Excluir oculto para `type === 'deadline'`); exclusão apenas pelo Resource com soft delete.
 - Calendário integrado com o Google Calendar de forma bidirecional
 - Criado lixeira dos soft-deletes com plugin Revive, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
 - Registros de atividades dos usuários com plugin ActivityLog - spatie/laravel-activitylog, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
@@ -81,9 +83,19 @@ Todos os documentos seguem o mesmo fluxo:
 4. `Service::generate()` gera o PDF via DomPDF e salva em `Storage::disk('public')`
 5. `pdf_path` salvo no registro para acesso direto sem regenerar
 
+### Módulo de Prazos — detalhes técnicos
+
+- **Enums:** `DeadlineType` (Contestação, Recurso/Apelação, Manifestação, Embargos de Declaração, Cumprimento de Sentença, Réplica, Contrarrazões, Agravo de Instrumento, Alegações Finais, Emenda à Inicial, Outro) e `DeadlineStatus` (Pendente, Cumprido, Perdido, Cancelado). Tipos como enum (não tabela) por opção de simplicidade; `Outro` como coringa.
+- **Tabelas:** `deadlines`, pivot `deadline_lawyer` (múltiplos advogados).
+- **Sincronização Google:** cada prazo gera **dois** eventos (fatal + interno), ambos dia inteiro. Por isso a pivot `deadline_google_events` tem coluna extra `date_type` ('fatal'/'internal') e unique em `(deadline_id, user_id, date_type)` — diferente de `hearing_google_events`/`task_google_events` que são 1:1 por token.
+- **`DeadlineObserver`:** create/update passam pelo mesmo `syncDeadlineEventsForUser()` no Service (usa `insert` se não há pivot, `update` se há), cobrindo o caso "usuário conectou depois". Se a data interna for removida na edição, o evento interno e sua pivot são apagados. `restored()` recria os eventos.
+- **All-day no Google:** `end.date` é exclusivo, então o `end` usa `buildDateTime($date, null, 1)` (+1 dia) para o evento ocupar exatamente 1 dia.
+- Lembretes: fatal popup 1 dia antes + email 2 dias antes; interno popup 1 dia antes.
+
 ## Convenções adotadas
 
 - Nomes de tabelas e campos em inglês, padrão Laravel
+- Exceção: termos processuais brasileiros sem tradução útil ficam em português nos *cases* do enum sem acento (ex: `DeadlineType::EmbargosDeclaracao`); classe, tabela e coluna seguem inglês
 - Soft deletes em todos os models principais
 - Enums PHP 8.1 com `label()` e `color()` para tradução e badge
 - `BadgeColumn` para exibição de status

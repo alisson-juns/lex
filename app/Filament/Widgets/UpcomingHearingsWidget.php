@@ -11,7 +11,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class UpcomingHearingsWidget extends BaseWidget
 {
     protected static ?int $sort = 3;
-    protected int | string | array $columnSpan = 'full';
+    protected int | string | array $columnSpan = 'half';
     protected static ?string $heading = 'Audiências nos próximos 10 dias';
 
     public function table(Table $table): Table

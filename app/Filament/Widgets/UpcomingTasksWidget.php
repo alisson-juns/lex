@@ -11,7 +11,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class UpcomingTasksWidget extends BaseWidget
 {
     protected static ?int $sort = 2;
-    protected int | string | array $columnSpan = 'full';
+    protected int | string | array $columnSpan = 'half';
     protected static ?string $heading = 'Agendamentos nos próximos 10 dias';
 
     public function table(Table $table): Table
