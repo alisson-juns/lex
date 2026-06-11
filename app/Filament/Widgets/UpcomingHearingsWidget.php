@@ -3,69 +3,49 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\HearingStatus;
+use App\Filament\Resources\HearingResource;
 use App\Models\Hearing;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Widgets\Widget;
+use Illuminate\Support\Collection;
 
-class UpcomingHearingsWidget extends BaseWidget
+class UpcomingHearingsWidget extends Widget
 {
+    protected static string $view = 'filament.widgets.upcoming-hearings-widget';
+
+    protected int|string|array $columnSpan = 1;
+
     protected static ?int $sort = 3;
-    protected int | string | array $columnSpan = 'half';
-    protected static ?string $heading = 'Audiências nos próximos 10 dias';
 
-    public function table(Table $table): Table
+    public function getHearings(): Collection
     {
-        return $table
-            ->query(
-                Hearing::query()
-                    ->whereBetween('date', [now(), now()->addDays(10)])
-                    ->whereNotIn('status', [
-                        HearingStatus::Cancelled->value,
-                        HearingStatus::Completed->value,
-                    ])
-                    ->orderBy('date')
-                    ->orderBy('time')
-            )
-            ->columns([
-                Tables\Columns\TextColumn::make('date')
-                    ->label('Data')
-                    ->date('d/m/Y')
-                    ->sortable(),
+        return Hearing::query()
+            ->where('status', '!=', HearingStatus::Cancelled->value)
+            ->whereDate('date', '>=', now()->toDateString())
+            ->whereDate('date', '<=', now()->addDays(7)->toDateString())
+            ->with('legalCase', 'lawyer')
+            ->orderBy('date', 'asc')
+            ->orderBy('time', 'asc')
+            ->limit(8)
+            ->get()
+            ->map(function (Hearing $hearing) {
+                $days = (int) now()->startOfDay()
+                    ->diffInDays($hearing->date->startOfDay(), false);
 
-                Tables\Columns\TextColumn::make('time')
-                    ->label('Hora')
-                    ->time('H:i'),
-
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Descrição')
-                    ->limit(50)
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('lawyer.name')
-                    ->label('Advogado'),
-
-                Tables\Columns\TextColumn::make('location')
-                    ->label('Local')
-                    ->limit(40),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status')
-                    ->formatStateUsing(fn (HearingStatus $state) => $state->label())
-                    ->colors([
-                        'success' => HearingStatus::Scheduled->value,
-                        'warning' => HearingStatus::Postponed->value,
-                        'gray'    => HearingStatus::Suspended->value,
-                    ]),
-            ])
-            ->actions([
-                Tables\Actions\Action::make('ver')
-                    ->url(fn (Hearing $record) => \App\Filament\Resources\HearingResource::getUrl('view', ['record' => $record]))
-                    ->icon('heroicon-o-eye')
-                    ->color('gray'),
-            ])
-            ->paginated([5, 10])
-            ->emptyStateHeading('Nenhuma audiência nos próximos 10 dias')
-            ->emptyStateIcon('heroicon-o-scale');
+                return [
+                    'id'          => $hearing->id,
+                    'description' => $hearing->description,
+                    'days_label'  => match (true) {
+                        $days === 0 => 'Hoje',
+                        $days === 1 => 'Falta 1 dia',
+                        default     => "Em {$days} dias",
+                    },
+                    'date'        => $hearing->date->format('d/m/Y'),
+                    'time'        => $hearing->time ? substr($hearing->time, 0, 5) : null,
+                    'location'    => $hearing->location,
+                    'process'     => $hearing->legalCase?->case_number,
+                    'lawyer'      => $hearing->lawyer?->name,
+                    'url'         => HearingResource::getUrl('view', ['record' => $hearing->id]),
+                ];
+            });
     }
 }

@@ -6,18 +6,6 @@
     gap: 1rem;
 }
 
-@media (min-width: 768px) {
-    .fi-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 1280px) {
-    .fi-card-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-
 .fi-card {
     display: block;
     overflow: hidden;
@@ -67,22 +55,27 @@
     background: #dc2626;
 }
 
-/* vermelho - prazo */
+/* ╔══════════════════════════════════════════════════════════════╗ */
+/* ║  👉 É AQUI QUE VOCÊ TROCA A COR DO HEADER DOS CARDS! 👈        ║ */
+/* ║  É só mudar o código de cor (#dc2626 etc).                    ║ */
+/* ║  Dica: joga o código num site tipo htmlcolorcodes.com         ║ */
+/* ║  pra ver a cor, ou pede uma cor pro Claude.                   ║ */
+/* ╚══════════════════════════════════════════════════════════════╝ */
 .fi-card-header--task {
+    background: #ea580c;
+}
+
+/* LARANJA  - agendamentos/tarefas */
+.fi-card-header--deadline {
     background: #dc2626;
 }
 
-/* vermelho - agendamento (igual legado) */
+/* VERMELHO - prazos */
 .fi-card-header--hearing {
-    background: #ca8a04;
+    background: #1f2937;
 }
 
-/* amarelo  - audiência */
-
-.fi-card-body {
-    background: #fff;
-    padding: 0.75rem 1rem;
-}
+/* PRETO    - audiências */
 
 .dark .fi-card-body {
     background: rgb(17 24 39);

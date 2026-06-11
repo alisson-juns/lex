@@ -14,9 +14,15 @@ class Dashboard extends BaseDashboard
     {
         return [
             StatsOverviewWidget::class,
+            UpcomingDeadlinesWidget::class,
             UpcomingTasksWidget::class,
             UpcomingHearingsWidget::class,
-            UpcomingDeadlinesWidget::class,
+
         ];
+    }
+
+    public function getColumns(): int|string|array
+    {
+        return 3;
     }
 }

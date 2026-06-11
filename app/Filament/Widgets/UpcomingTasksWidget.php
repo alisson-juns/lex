@@ -3,66 +3,48 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\TaskStatus;
+use App\Filament\Resources\TaskResource;
 use App\Models\Task;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Widgets\Widget;
+use Illuminate\Support\Collection;
 
-class UpcomingTasksWidget extends BaseWidget
+class UpcomingTasksWidget extends Widget
 {
+    protected static string $view = 'filament.widgets.upcoming-tasks-widget';
+
+    protected int|string|array $columnSpan = 1;
+
     protected static ?int $sort = 2;
-    protected int | string | array $columnSpan = 'half';
-    protected static ?string $heading = 'Agendamentos nos próximos 10 dias';
 
-    public function table(Table $table): Table
+    public function getTasks(): Collection
     {
-        return $table
-            ->query(
-                Task::query()
-                    ->whereBetween('due_date', [now(), now()->addDays(10)])
-                    ->whereIn('status', [
-                        TaskStatus::Scheduled->value,
-                        TaskStatus::Rescheduled->value,
-                    ])
-                    ->orderBy('due_date')
-                    ->orderBy('due_time')
-            )
-            ->columns([
-                Tables\Columns\TextColumn::make('due_date')
-                    ->label('Data')
-                    ->date('d/m/Y')
-                    ->sortable(),
+        return Task::query()
+            ->whereNotIn('status', [TaskStatus::Completed->value, TaskStatus::Cancelled->value])
+            ->whereDate('due_date', '>=', now()->toDateString())
+            ->whereDate('due_date', '<=', now()->addDays(7)->toDateString())
+            ->with('legalCase', 'lawyers')
+            ->orderBy('due_date', 'asc')
+            ->orderBy('due_time', 'asc')
+            ->limit(8)
+            ->get()
+            ->map(function (Task $task) {
+                $days = (int) now()->startOfDay()
+                    ->diffInDays($task->due_date->startOfDay(), false);
 
-                Tables\Columns\TextColumn::make('due_time')
-                    ->label('Hora')
-                    ->time('H:i'),
-
-                Tables\Columns\TextColumn::make('title')
-                    ->label('Título')
-                    ->searchable()
-                    ->limit(50),
-
-                Tables\Columns\TextColumn::make('lawyers.name')
-                    ->label('Advogado(s)')
-                    ->badge()
-                    ->separator(','),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status')
-                    ->formatStateUsing(fn (TaskStatus $state) => $state->label())
-                    ->colors([
-                        'warning' => TaskStatus::Scheduled->value,
-                        'gray'    => TaskStatus::Rescheduled->value,
-                    ]),
-            ])
-            ->actions([
-                Tables\Actions\Action::make('ver')
-                    ->url(fn (Task $record) => \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $record]))
-                    ->icon('heroicon-o-eye')
-                    ->color('gray'),
-            ])
-            ->paginated([5, 10])
-            ->emptyStateHeading('Nenhum agendamento nos próximos 10 dias')
-            ->emptyStateIcon('heroicon-o-clock');
+                return [
+                    'id'         => $task->id,
+                    'title'      => $task->title,
+                    'days_label' => match (true) {
+                        $days === 0 => 'Hoje',
+                        $days === 1 => 'Falta 1 dia',
+                        default     => "Em {$days} dias",
+                    },
+                    'date'       => $task->due_date->format('d/m/Y'),
+                    'time'       => $task->due_time ? substr($task->due_time, 0, 5) : null,
+                    'process'    => $task->legalCase?->case_number,
+                    'lawyers'    => $task->lawyers->pluck('name')->join(', '),
+                    'url'        => TaskResource::getUrl('view', ['record' => $task->id]),
+                ];
+            });
     }
 }
