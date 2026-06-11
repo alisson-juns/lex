@@ -57,7 +57,8 @@ Advogados (acesso inicial). Controle de permissões via Filament Shield.
 - Soft delete em todos os módulos principais
 - Enums com método `label()` em português para status
 - Configurações do escritório (`FirmSettings`): nome, endereço, logo, posição do logo, cidades/estados para feriados
-- Calendário (`CalendarPage`) com widget de audiências e tarefas próximas
+- Dashboard com 3 widgets-card (Prazos, Agendamentos, Audiências) replicando o visual do sistema legado (ver seção "Widgets-card da dashboard")
+- Calendário (`CalendarPage`) com FullCalendar exibindo audiências, tarefas, prazos, feriados e eventos externos do Google
 - Calendário exibe prazos como eventos de dia inteiro: dois por prazo — fatal (vermelho) e interno (laranja, só se preenchido). Prazo não pode ser excluído pelo popover do calendário (botão Excluir oculto para `type === 'deadline'`); exclusão apenas pelo Resource com soft delete.
 - Calendário integrado com o Google Calendar de forma bidirecional
 - Criado lixeira dos soft-deletes com plugin Revive, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
@@ -91,6 +92,17 @@ Todos os documentos seguem o mesmo fluxo:
 - **`DeadlineObserver`:** create/update passam pelo mesmo `syncDeadlineEventsForUser()` no Service (usa `insert` se não há pivot, `update` se há), cobrindo o caso "usuário conectou depois". Se a data interna for removida na edição, o evento interno e sua pivot são apagados. `restored()` recria os eventos.
 - **All-day no Google:** `end.date` é exclusivo, então o `end` usa `buildDateTime($date, null, 1)` (+1 dia) para o evento ocupar exatamente 1 dia.
 - Lembretes: fatal popup 1 dia antes + email 2 dias antes; interno popup 1 dia antes.
+
+### Widgets-card da dashboard
+
+Réplica visual dos cards do sistema legado (validado com a advogada). Três widgets: `UpcomingDeadlinesWidget` (Prazos), `UpcomingTasksWidget` (Agendamentos), `UpcomingHearingsWidget` (Audiências). Todos com janela de 7 dias, limite de 8 cards, card inteiro clicável → abre o registro.
+
+- **Não são `TableWidget`:** estendem `Widget` com view Blade própria (`resources/views/filament/widgets/upcoming-*-widget.blade.php`), porque `TableWidget` não renderiza cards. Cada widget expõe um método `getX()` que retorna `Collection` de arrays já formatados.
+- **Componente reutilizável:** `resources/views/components/dashboard-card.blade.php` (`<x-dashboard-card>`), props `url`, `type`, `title`, `badge` + slot para o corpo.
+- **CSS custom obrigatório:** `resources/css/widgets/cards.css`, registrado no panel provider via `->assets([Css::make('widget-cards', resource_path('css/widgets/cards.css'))])`. Classes Tailwind como `bg-red-600` são purgadas no build do Filament e **não funcionam** em view de widget — por isso classes próprias `.fi-card-*` no CSS custom. Cor do header trocada no bloco marcado do `cards.css` (task laranja `#ea580c`, deadline vermelho `#dc2626`, hearing preto `#1f2937`).
+- **Após editar o CSS, SEMPRE:** `php artisan filament:assets && php artisan view:clear` (o `filament:assets` republica para `public/`; esquecer = "mexi e não mudou nada").
+- **Layout:** 3 colunas no desktop, 1 coluna no mobile. `columnSpan = 1` (número, **não** string `'1'` — string é tratada como largura cheia) em cada widget + `getColumns(): 3` na `Dashboard.php`. `.fi-card-grid` com `repeat(1, ...)` (1 card por linha dentro de cada coluna).
+- **Ordem fixa (Prazos → Agendamentos → Audiências):** definida explicitamente em `Dashboard::getWidgets()`, não via `$sort` (os widgets de stats no topo bagunçam a numeração). Listar `getWidgets()` manualmente desativa a descoberta automática **nesta página** — todos os widgets, incluindo `StatsOverviewWidget`, precisam constar na lista ou somem.
 
 ## Convenções adotadas
 

@@ -15,6 +15,10 @@ use App\Models\Task;
 use App\Models\TaskGoogleEvent;
 use App\Services\GoogleCalendarService;
 use App\Services\HolidayService;
+use App\Enums\DeadlineStatus;
+use App\Filament\Resources\DeadlineResource;
+use App\Models\Deadline;
+use App\Models\DeadlineGoogleEvent;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -311,6 +315,7 @@ class CalendarWidget extends FullCalendarWidget
                     $form->fill([
                         'date'     => $this->selectedDate,
                         'due_date' => $this->selectedDate,
+                        'fatal_date' => $this->selectedDate,
                     ]);
                 })
                 ->form([
@@ -319,6 +324,7 @@ class CalendarWidget extends FullCalendarWidget
                         ->options([
                             'task'    => '📋 Tarefa',
                             'hearing' => '⚖️ Audiência',
+                            'deadline' => '⏰ Prazo',
                         ])
                         ->required()
                         ->live()
@@ -391,8 +397,39 @@ class CalendarWidget extends FullCalendarWidget
                         ->options(LegalCase::query()->pluck('case_number', 'id'))
                         ->searchable()
                         ->nullable()
-                        ->required(fn (Get $get) => $get('type') === 'hearing')
-                        ->visible(fn (Get $get) => in_array($get('type'), ['task', 'hearing']))
+                        ->required(fn (Get $get) => in_array($get('type'), ['hearing', 'deadline']))
+                        ->visible(fn (Get $get) => in_array($get('type'), ['task', 'hearing', 'deadline']))
+                        ->columnSpanFull(),
+
+                    Forms\Components\Select::make('deadline_type')
+                        ->label('Tipo de prazo')
+                        ->options(
+                            collect(\App\Enums\DeadlineType::cases())
+                                ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
+                        )
+                        ->searchable()
+                        ->required(fn (Get $get) => $get('type') === 'deadline')
+                        ->visible(fn (Get $get) => $get('type') === 'deadline')
+                        ->columnSpanFull(),
+
+                    Forms\Components\DatePicker::make('fatal_date')
+                        ->label('Prazo fatal')
+                        ->required(fn (Get $get) => $get('type') === 'deadline')
+                        ->displayFormat('d/m/Y')
+                        ->visible(fn (Get $get) => $get('type') === 'deadline'),
+
+                    Forms\Components\DatePicker::make('internal_date')
+                        ->label('Prazo interno')
+                        ->displayFormat('d/m/Y')
+                        ->beforeOrEqual('fatal_date')
+                        ->visible(fn (Get $get) => $get('type') === 'deadline'),
+
+                    Forms\Components\Select::make('deadline_lawyers')
+                        ->label('Advogado(s)')
+                        ->options(Lawyer::query()->pluck('name', 'id'))
+                        ->multiple()
+                        ->searchable()
+                        ->visible(fn (Get $get) => $get('type') === 'deadline')
                         ->columnSpanFull(),
                 ])
                 ->action(function (array $data) {
@@ -422,7 +459,7 @@ class CalendarWidget extends FullCalendarWidget
                                     ->url(TaskResource::getUrl('edit', ['record' => $task->id])),
                             ])
                             ->send();
-                    } else {
+                    } elseif ($data['type'] === 'hearing') {
                         $hearing = Hearing::create([
                             'description'   => $data['hearing_description'],
                             'date'          => $data['date'],
@@ -434,14 +471,29 @@ class CalendarWidget extends FullCalendarWidget
                         ]);
                         // HearingObserver::created() → sincroniza para todos os usuários com token
 
+                    } else { // deadline
+                        $deadline = Deadline::create([
+                            'legal_case_id' => $data['legal_case_id'],
+                            'deadline_type' => $data['deadline_type'],
+                            'fatal_date'    => $data['fatal_date'],
+                            'internal_date' => $data['internal_date'] ?? null,
+                            'status'        => DeadlineStatus::Pending->value,
+                            'created_by'    => auth()->id(),
+                        ]);
+                        // DeadlineObserver::created() → sincroniza para todos os usuários com token
+
+                        if (! empty($data['deadline_lawyers'])) {
+                            $deadline->lawyers()->sync($data['deadline_lawyers']);
+                        }
+
                         Notification::make()
-                            ->title('Audiência criada')
-                            ->body("\"{$hearing->description}\" agendada para " . Carbon::parse($hearing->date)->format('d/m/Y') . '.')
+                            ->title('Prazo criado')
+                            ->body($deadline->deadline_type->label() . ' — fatal em ' . Carbon::parse($deadline->fatal_date)->format('d/m/Y') . '.')
                             ->success()
                             ->actions([
                                 \Filament\Notifications\Actions\Action::make('edit')
                                     ->label('Editar')
-                                    ->url(HearingResource::getUrl('edit', ['record' => $hearing->id])),
+                                    ->url(DeadlineResource::getUrl('edit', ['record' => $deadline->id])),
                             ])
                             ->send();
                     }
