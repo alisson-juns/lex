@@ -95,6 +95,11 @@ class AdminPanelProvider extends PanelProvider
                 ),
 
             ])
+
+            ->assets([
+            \Filament\Support\Assets\Css::make('widget-cards', resource_path('css/widgets/cards.css')),
+            ])
+
             ->authMiddleware([
                 Authenticate::class,
             ]);
