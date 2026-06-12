@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
 class DeadlineResource extends Resource
 {
     protected static ?string $model = Deadline::class;
-    protected static ?string $navigationIcon   = 'heroicon-o-exclamation-triangle';
+    protected static ?string $navigationIcon   = 'heroicon-s-clock';
     protected static ?string $navigationLabel  = 'Prazos';
     protected static ?string $modelLabel       = 'Prazo';
     protected static ?string $pluralModelLabel = 'Prazos';

@@ -16,7 +16,7 @@ class FirmSettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-building-office';
+    protected static ?string $navigationIcon  = 'heroicon-s-building-office';
     protected static ?string $title           = 'Configurações do Escritório';
     protected static ?string $navigationLabel = 'Configurações do Escritório';
     protected static ?string $navigationGroup = 'Configurações';

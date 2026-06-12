@@ -42,7 +42,12 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->profile(isSimple: false)
             ->colors([
+                'danger' => Color::Rose,
+                'gray' => Color::Gray,
+                'info' => Color::Blue,
                 'primary' => Color::Amber,
+                'success' => Color::Emerald,
+                'warning' => Color::Orange,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -79,7 +84,7 @@ class AdminPanelProvider extends PanelProvider
                 ->label('Log de Atividade')
                 ->pluralLabel('Logs de Atividade')
                 ->navigationGroup('Sistema')
-                ->navigationIcon('heroicon-o-shield-check')
+                ->navigationIcon('heroicon-s-shield-check')
                 ->navigationSort(99)
                 ->authorize(fn () => auth()->user()->hasRole(['super_admin', 'admin']))
                 ->isRestoreActionHidden(false)

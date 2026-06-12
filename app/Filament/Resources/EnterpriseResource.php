@@ -32,7 +32,7 @@ class EnterpriseResource extends Resource
     protected static ?string $navigationGroup = 'Controle de Clientes';
     protected static ?int $navigationSort = 2;
     protected static ?string $navigationLabel = 'Pessoa Jurídica';
-    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+    protected static ?string $navigationIcon = 'heroicon-s-building-office-2';
 
     public static function getRelations(): array
     {

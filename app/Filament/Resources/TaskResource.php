@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Auth;
 class TaskResource extends Resource
 {
     protected static ?string $model = Task::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-clipboard-document-list';
+    protected static ?string $navigationIcon  = 'heroicon-s-clipboard-document-list';
     protected static ?string $navigationLabel = 'Tarefas';
     protected static ?string $modelLabel      = 'Tarefa';
     protected static ?string $pluralModelLabel = 'Tarefas';

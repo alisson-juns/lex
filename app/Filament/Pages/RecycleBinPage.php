@@ -20,12 +20,12 @@ class RecycleBinPage extends Page
 
     public static function getNavigationIcon(): string
     {
-        return 'heroicon-o-trash';
+        return 'heroicon-s-trash';
     }
 
     public static function getActiveNavigationIcon(): string
     {
-        return 'heroicon-o-trash';
+        return 'heroicon-s-trash';
     }
 
     public static function getNavigationLabel(): string

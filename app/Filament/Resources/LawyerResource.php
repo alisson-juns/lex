@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class LawyerResource extends Resource
 {
     protected static ?string $model = Lawyer::class;
-    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static ?string $navigationIcon = 'heroicon-s-scale';
     protected static ?string $navigationGroup = 'Controle de Advogados';
     protected static ?int $navigationSort = 3;
     protected static ?string $navigationLabel = 'Advogados';

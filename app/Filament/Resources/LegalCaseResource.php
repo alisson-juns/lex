@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class LegalCaseResource extends Resource
 {
     protected static ?string $model = LegalCase::class;
-    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static ?string $navigationIcon = 'heroicon-s-scale';
     protected static ?string $navigationLabel = 'Processos';
     protected static ?string $modelLabel = 'Processo';
     protected static ?string $navigationGroup = 'Controle de Processos';

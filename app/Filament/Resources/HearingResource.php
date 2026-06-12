@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class HearingResource extends Resource
 {
     protected static ?string $model = Hearing::class;
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static ?string $navigationIcon = 'heroicon-s-calendar-days';
     protected static ?string $navigationLabel = 'Audiências';
     protected static ?string $modelLabel = 'Audiência';
     protected static ?string $navigationGroup = 'Controle de Processos';

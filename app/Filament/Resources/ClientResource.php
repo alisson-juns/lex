@@ -34,7 +34,7 @@ class ClientResource extends Resource
     protected static ?string $navigationGroup = 'Controle de Clientes';
     protected static ?int $navigationSort = 1;
     protected static ?string $navigationLabel = 'Pessoa Física';
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static ?string $navigationIcon = 'heroicon-s-users';
 
     public static function getRelations(): array
     {
@@ -54,7 +54,7 @@ class ClientResource extends Resource
             ->schema([
                 Wizard::make([
                     Step::make('Dados Pessoais')
-                        ->icon('heroicon-m-user')
+                        ->icon('heroicon-o-user')
                         ->description('Informações principais do cliente')
                         ->schema([
                         // Linha 1: Nome - Data de nascimento - Gênero

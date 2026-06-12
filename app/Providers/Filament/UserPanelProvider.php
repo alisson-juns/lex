@@ -53,7 +53,7 @@ class UserPanelProvider extends PanelProvider
                 ->label('Log de Atividade')
                 ->pluralLabel('Logs de Atividade')
                 ->navigationGroup('Sistema')
-                ->navigationIcon('heroicon-o-shield-check')
+                ->navigationIcon('heroicon-s-shield-check')
                 ->navigationSort(99)
                 ->authorize(fn () => auth()->user()->hasRole(['super_admin', 'admin']))
                 ->isRestoreActionHidden(false)
