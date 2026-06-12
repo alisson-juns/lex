@@ -53,10 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                \App\Filament\Widgets\StatsOverviewWidget::class,
-                \App\Filament\Widgets\UpcomingTasksWidget::class,
-                \App\Filament\Widgets\UpcomingHearingsWidget::class,
-                Widgets\AccountWidget::class,
+
 
             ])
             ->middleware([
