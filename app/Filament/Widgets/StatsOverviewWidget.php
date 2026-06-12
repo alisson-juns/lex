@@ -4,11 +4,13 @@ namespace App\Filament\Widgets;
 
 use App\Enums\HearingStatus;
 use App\Enums\TaskStatus;
+use App\Enums\DeadlineStatus;
 use App\Models\Client;
 use App\Models\Enterprise;
 use App\Models\Hearing;
 use App\Models\LegalCase;
 use App\Models\Task;
+use App\Models\Deadline;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -41,6 +43,14 @@ class StatsOverviewWidget extends BaseWidget
             ])
             ->count();
 
+        $prazosProximos = Deadline::query()
+            ->whereBetween('fatal_date', [$hoje, $em10dias])
+            ->whereIn('status', [
+                DeadlineStatus::Completed->value,
+                DeadlineStatus::Pending->value,
+            ])
+            ->count();
+
         return [
             Stat::make('Clientes', $totalClientes)
                 ->description('Pessoas físicas e jurídicas')
@@ -61,6 +71,11 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Agendados')
                 ->icon('heroicon-o-clock')
                 ->color('danger'),
+
+            Stat::make('Prazos (10 dias)', $prazosProximos)
+                ->description('Prazos pendentes')
+                ->icon('heroicon-o-flag')
+                ->color('primary'),
         ];
     }
 }
