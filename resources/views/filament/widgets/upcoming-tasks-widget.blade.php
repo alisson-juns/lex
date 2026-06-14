@@ -1,7 +1,10 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            <span class="flex items-center gap-2">📋 Agendamentos próximos</span>
+            <span class="flex items-center gap-2">
+                <x-heroicon-o-clipboard-document-list class="w-5 h-5 text-danger-500" />
+                Agendamentos próximos
+            </span>
         </x-slot>
 
         @php($tasks = $this->getTasks())

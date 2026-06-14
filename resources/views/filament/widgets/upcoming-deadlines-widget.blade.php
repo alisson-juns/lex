@@ -1,8 +1,11 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            <span class="flex items-center gap-2">⚠️ Prazos fatais próximos</span>
-        </x-slot>
+            <span class="flex items-center gap-2">
+                <x-heroicon-o-clock class="w-5 h-5 text-danger-500" />
+                Prazos fatais próximos
+            </span>
+    </x-slot>
 
         @php($deadlines = $this->getDeadlines())
 

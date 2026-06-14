@@ -54,11 +54,11 @@ class DashboardStatsWidget extends Widget
                 'url'    => LegalCaseResource::getUrl('index'),
             ],
             [
-                'label'  => 'Audiências (10 dias)',
+                'label'  => 'Audiências',
                 'value'  => Hearing::whereBetween('date', [$today, $in10Days])->count(),
                 'sub'    => 'Marcadas ou adiadas',
                 'icon'   => 'heroicon-o-scale',
-                'color'  => '#d97706', // amber-600
+                'color'  => '#585654', // black-600
                 'url'    => HearingResource::getUrl('index'),
             ],
             [
@@ -66,11 +66,11 @@ class DashboardStatsWidget extends Widget
                 'value'  => Task::where('status', TaskStatus::Scheduled)->count(),
                 'sub'    => 'Agendados',
                 'icon'   => 'heroicon-o-clock',
-                'color'  => '#7c3aed', // violet-600
+                'color'  => '#d97706', // amber-600
                 'url'    => TaskResource::getUrl('index'),
             ],
             [
-                'label'  => 'Prazos (10 dias)',
+                'label'  => 'Prazos',
                 'value'  => Deadline::where('status', DeadlineStatus::Pending)
                     ->whereBetween('fatal_date', [$today, $in10Days])
                     ->count(),

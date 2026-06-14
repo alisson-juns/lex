@@ -1,8 +1,11 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <x-slot name="heading">
-            <span class="flex items-center gap-2">⚖️ Audiências próximas</span>
-        </x-slot>
+     <x-slot name="heading">
+        <span class="flex items-center gap-2">
+            <x-heroicon-o-scale class="w-5 h-5 text-danger-500" />
+            Audiências próximas
+        </span>
+     </x-slot>
 
         @php($hearings = $this->getHearings())
 
