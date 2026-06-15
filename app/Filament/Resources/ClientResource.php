@@ -24,7 +24,6 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Leandrocfe\FilamentPtbrFormFields\Cep;
-use Rmsramos\Activitylog\RelationManagers\ActivitylogRelationManager;
 
 class ClientResource extends Resource
 {
@@ -43,7 +42,6 @@ class ClientResource extends Resource
             \App\Filament\Resources\ClientResource\RelationManagers\PowersOfAttorneyRelationManager::class,
             \App\Filament\Resources\ClientResource\RelationManagers\GratuityDeclarationsRelationManager::class,
             \App\Filament\Resources\ClientResource\RelationManagers\FeeAgreementsRelationManager::class,
-            ActivitylogRelationManager::class,
 
         ];
     }

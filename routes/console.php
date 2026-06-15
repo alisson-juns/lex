@@ -5,20 +5,35 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use App\Models\FeeAgreement;
 use App\Models\EnterpriseFeeAgreement;
+use App\Models\PowerOfAttorney;
+use App\Models\GratuityDeclaration;
+use App\Models\EnterprisePowerOfAttorney;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-
+/**
+ * Limpeza diária de rascunhos órfãos (is_draft = true) com mais de 1 dia.
+ * São registros criados pelo modal de geração de documento que nunca
+ * foram finalizados (afterSave() vira is_draft = false). Não aparecem
+ * no RelationManager por causa do filtro, mas acumulam no banco.
+ *
+ * Hard delete proposital: nenhum desses models usa SoftDeletes —
+ * rascunho descartado não precisa ir para a lixeira.
+ */
 Schedule::call(function () {
-    FeeAgreement::where('is_draft', true)
-        ->where('created_at', '<', now()->subDay())
-        ->delete();
-})->daily();
+    $documentModels = [
+        FeeAgreement::class,
+        EnterpriseFeeAgreement::class,
+        PowerOfAttorney::class,
+        GratuityDeclaration::class,
+        EnterprisePowerOfAttorney::class,
+    ];
 
-Schedule::call(function () {
-    EnterpriseFeeAgreement::where('is_draft', true)
-        ->where('created_at', '<', now()->subDay())
-        ->delete();
+    foreach ($documentModels as $model) {
+        $model::where('is_draft', true)
+            ->where('created_at', '<', now()->subDay())
+            ->delete();
+    }
 })->daily();
