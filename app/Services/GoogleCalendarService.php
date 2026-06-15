@@ -77,13 +77,20 @@ class GoogleCalendarService
                 return null;
             }
 
+
             $newToken = $client->fetchAccessTokenWithRefreshToken($refreshToken);
 
             if (isset($newToken['error'])) {
-                Log::warning("Google token refresh falhou user #{$user->id}: " . ($newToken['error_description'] ?? $newToken['error']));
-                $tokenModel->delete();
+                Log::warning("Google refresh user #{$user->id}: " . ($newToken['error'] ?? ''));
+
+                // Só desconecta se o refresh token foi REVOGADO/EXPIRADO de vez
+                if (($newToken['error'] ?? '') === 'invalid_grant') {
+                    $tokenModel->delete();
+                }
+                // Erros transitórios: não apaga nada, só não sincroniza desta vez
                 return null;
             }
+
 
             $tokenModel->update(['token_json' => json_encode($client->getAccessToken())]);
         }

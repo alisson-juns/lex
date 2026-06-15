@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class () extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('enterprise_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('enterprise_id')->constrained('enterprises')->cascadeOnDelete();
+            $table->foreignId('enterprise_id')->unique()->constrained('enterprises')->onDelete('cascade');
             $table->char('cnpj', 18)->unique();
             $table->char('ie', 18)->nullable();
             $table->char('im', 18)->nullable();
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('documents');
+        Schema::dropIfExists('enterprise_documents');
     }
 };

@@ -1,7 +1,6 @@
 <?php
 
 return [
-    'auth_provider_model' => 'App\\Models\\User',
     'shield_resource' => [
         'should_register_navigation' => true,
         'slug' => 'shield/roles',
