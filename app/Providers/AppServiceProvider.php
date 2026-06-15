@@ -18,8 +18,6 @@ use Spatie\Activitylog\Models\Activity;
 
 class AppServiceProvider extends ServiceProvider
 {
-    // remova o bloco public $singletons inteiro
-
     public function register(): void
     {
         //

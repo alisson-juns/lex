@@ -2,19 +2,14 @@
 
 namespace App\Observers;
 
+use App\Jobs\SyncTaskToGoogle;
 use App\Models\Task;
-use App\Services\GoogleCalendarService;
 
 class TaskObserver
 {
-    public function __construct(
-        protected GoogleCalendarService $googleService
-    ) {
-    }
-
     public function created(Task $task): void
     {
-        $this->googleService->createTaskEvent($task);
+        SyncTaskToGoogle::dispatch($task->id, 'create');
     }
 
     public function updated(Task $task): void
@@ -25,16 +20,16 @@ class TaskObserver
             return;
         }
 
-        $this->googleService->updateTaskEvent($task);
+        SyncTaskToGoogle::dispatch($task->id, 'update');
     }
 
     public function deleted(Task $task): void
     {
-        $this->googleService->deleteTaskEvent($task);
+        SyncTaskToGoogle::dispatch($task->id, 'delete');
     }
 
     public function restored(Task $task): void
     {
-        $this->googleService->createTaskEvent($task);
+        SyncTaskToGoogle::dispatch($task->id, 'create');
     }
 }

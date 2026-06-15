@@ -2,19 +2,14 @@
 
 namespace App\Observers;
 
+use App\Jobs\SyncHearingToGoogle;
 use App\Models\Hearing;
-use App\Services\GoogleCalendarService;
 
 class HearingObserver
 {
-    public function __construct(
-        protected GoogleCalendarService $googleService
-    ) {
-    }
-
     public function created(Hearing $hearing): void
     {
-        $this->googleService->createHearingEvent($hearing);
+        SyncHearingToGoogle::dispatch($hearing->id, 'create');
     }
 
     public function updated(Hearing $hearing): void
@@ -25,16 +20,16 @@ class HearingObserver
             return;
         }
 
-        $this->googleService->updateHearingEvent($hearing);
+        SyncHearingToGoogle::dispatch($hearing->id, 'update');
     }
 
     public function deleted(Hearing $hearing): void
     {
-        $this->googleService->deleteHearingEvent($hearing);
+        SyncHearingToGoogle::dispatch($hearing->id, 'delete');
     }
 
     public function restored(Hearing $hearing): void
     {
-        $this->googleService->createHearingEvent($hearing);
+        SyncHearingToGoogle::dispatch($hearing->id, 'create');
     }
 }

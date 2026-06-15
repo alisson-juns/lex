@@ -2,19 +2,14 @@
 
 namespace App\Observers;
 
+use App\Jobs\SyncDeadlineToGoogle;
 use App\Models\Deadline;
-use App\Services\GoogleCalendarService;
 
 class DeadlineObserver
 {
-    public function __construct(
-        protected GoogleCalendarService $googleService
-    ) {
-    }
-
     public function created(Deadline $deadline): void
     {
-        $this->googleService->createDeadlineEvents($deadline);
+        SyncDeadlineToGoogle::dispatch($deadline->id, 'create');
     }
 
     public function updated(Deadline $deadline): void
@@ -25,16 +20,16 @@ class DeadlineObserver
             return;
         }
 
-        $this->googleService->updateDeadlineEvents($deadline);
+        SyncDeadlineToGoogle::dispatch($deadline->id, 'update');
     }
 
     public function deleted(Deadline $deadline): void
     {
-        $this->googleService->deleteDeadlineEvents($deadline);
+        SyncDeadlineToGoogle::dispatch($deadline->id, 'delete');
     }
 
     public function restored(Deadline $deadline): void
     {
-        $this->googleService->createDeadlineEvents($deadline);
+        SyncDeadlineToGoogle::dispatch($deadline->id, 'create');
     }
 }
