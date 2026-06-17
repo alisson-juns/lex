@@ -37,3 +37,20 @@ Schedule::call(function () {
             ->delete();
     }
 })->daily();
+
+
+Schedule::command('notifications:send-upcoming')
+    ->hourly()
+    ->withoutOverlapping();
+
+
+// Itens com horário definido (audiência com hora, tarefa com hora) — janela por hora
+Schedule::command('notifications:scan --timed')
+    ->hourly()
+    ->withoutOverlapping();
+
+// Itens all-day (prazos sempre; audiência/tarefa sem hora) — 8h de Brasília
+Schedule::command('notifications:scan --allday')
+    ->dailyAt('08:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping();

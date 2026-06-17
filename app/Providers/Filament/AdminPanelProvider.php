@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditProfile;
 use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -14,6 +15,7 @@ use Filament\Support\Colors\Color;
 use Filament\Widgets;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
+use Filament\Notifications\Concerns\HasNotifications;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Promethys\Revive\RevivePlugin;
 use Rmsramos\Activitylog\ActivitylogPlugin;
@@ -40,7 +42,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('user')
             ->login()
-            ->profile(isSimple: false)
+            ->profile(EditProfile::class, isSimple: false)
             ->colors([
                 'danger' => Color::Rose,
                 'gray' => Color::Gray,
@@ -49,6 +51,8 @@ class AdminPanelProvider extends PanelProvider
                 'success' => Color::Emerald,
                 'warning' => Color::Orange,
             ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

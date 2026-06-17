@@ -184,6 +184,8 @@ class ViewClient extends ViewRecord
                                 ->maxLength(255),
                             Forms\Components\TextInput::make('case_number')
                                 ->label('Nº do Processo')
+                                ->placeholder('Ex: 0000000-00.0000.0.00.0000')
+                                ->mask("0000000-00.0000.0.00.0000")
                                 ->maxLength(255),
                         ]),
                     Forms\Components\Grid::make(3)

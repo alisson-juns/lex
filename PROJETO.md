@@ -107,7 +107,7 @@ Réplica visual dos cards do sistema legado (validado com a advogada). Três wid
 ## Convenções adotadas
 
 - Nomes de tabelas e campos em inglês, padrão Laravel
-- Exceção: termos processuais brasileiros sem tradução útil ficam em português nos *cases* do enum sem acento (ex: `DeadlineType::EmbargosDeclaracao`); classe, tabela e coluna seguem inglês
+- Exceção: termos processuais brasileiros sem tradução útil ficam em português nos _cases_ do enum sem acento (ex: `DeadlineType::EmbargosDeclaracao`); classe, tabela e coluna seguem inglês
 - Soft deletes em todos os models principais
 - Enums PHP 8.1 com `label()` e `color()` para tradução e badge
 - `BadgeColumn` para exibição de status
@@ -118,8 +118,12 @@ Réplica visual dos cards do sistema legado (validado com a advogada). Três wid
 
 ## Testes e correções
 
-- [ ] Alterar a forma como os documentos são armazenados do BD e como são exibidos no RelationManager
-
 ## O que falta construir
+
+- [ ] Sistema de notificações via e-mails de tarefas, prazos e audiências próximas de vencer 24 ou 48h:
+      1 - o usuário só recebe notificação do que ele inseriu e não geral
+      2 - Notificação opcional ou obrigatória?
+
+- [ ] Verificar e testar o sistema de notificação da aplicação
 
 - [ ] Dashboard customizada (somente no final)
