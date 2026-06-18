@@ -33,13 +33,15 @@ class AppServiceProvider extends ServiceProvider
         Deadline::observe(DeadlineObserver::class);
         Gate::policy(Activity::class, ActivityPolicy::class);
 
+
+        Page::$reportValidationErrorUsing = function (ValidationException $exception) {
+            Notification::make()
+                ->title($exception->getMessage())
+                ->danger()
+                ->send();
+        };
+
+
     }
 
 }
-
-Page::$reportValidationErrorUsing = function (ValidationException $exception) {
-    Notification::make()
-        ->title($exception->getMessage())
-        ->danger()
-        ->send();
-};

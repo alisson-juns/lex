@@ -13,7 +13,12 @@ Advogados (acesso inicial). Controle de permissões via Filament Shield.
 - Laravel 12 + Filament 3.3
 - PHP 8.3
 - MariaDB (VPS Hetzner, Ubuntu 24.04, HestiaCP)
-- Filament Shield para roles e permissões
+- Filament Shield para roles e permissões (`super_admin`, `admin`, `lawyer`, `user`)
+- Filas com driver `database` (Supervisor em produção): fila `default` (Google Calendar) e fila `notifications` (notificações)
+- Google Calendar API (OAuth2, token criptografado por usuário)
+- TinyMCE + DomPDF para documentos
+- Intervention Image para tratamento do logo do escritório
+- Zoho SMTP para e-mails
 
 ## O que já está pronto
 
@@ -63,6 +68,22 @@ Advogados (acesso inicial). Controle de permissões via Filament Shield.
 - Calendário integrado com o Google Calendar de forma bidirecional
 - Criado lixeira dos soft-deletes com plugin Revive, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
 - Registros de atividades dos usuários com plugin ActivityLog - spatie/laravel-activitylog, somente super-admin e admin tem permissão, utilizado Custom page para tradução ao pt-br
+- Limpeza diária automática de rascunhos órfãos (`is_draft = true` com mais de 1 dia) via `Schedule::call()->daily()` em `routes/console.php`. Hard delete proposital — rascunho descartado não vai para a lixeira.
+
+### Painel e rotas
+
+- Painel único Filament: `AdminPanelProvider` com `->id('admin')->path('user')` (responde em `/user`).
+- `Route::get('/')` em `web.php` redireciona para `/user`. Acesso não autenticado cai em `/user/login`.
+- `canAccessPanel()` retorna `true` para usuário autenticado — sistema interno de uso restrito; granularidade fica a cargo do Shield (Resources/Pages visíveis + permissions).
+- Rotas web próprias (fora do painel) para: PDF de documentos, fichas de impressão (cliente/empresa) e fluxo OAuth do Google (`/google/redirect`, `/google/callback`, `/google/disconnect`). O callback do Google é rota independente do path do painel.
+
+### Notificações
+
+- Comando `notifications:scan {--timed} {--allday} {--test}` (`ScanUpcomingNotifications`) varre prazos, audiências e tarefas próximas (janelas de 24h e 48h) e enfileira `SendUpcomingNotification` na fila `notifications`.
+- Roteamento por tipo: itens com horário definido → `--timed` (scheduler `->hourly()`); itens all-day (prazos sempre; audiência/tarefa sem hora) → `--allday` (scheduler `->dailyAt('08:00')->timezone('America/Sao_Paulo')`, pois o servidor roda em UTC).
+- Idempotência via tabela `notification_logs` com unique constraint (`user_id`, `notifiable_type`, `notifiable_id`, `date_type`, `window_hours`).
+- Destinatários determinados pelo relacionamento pivot com advogados (não pelo criador do registro).
+- Preferências por usuário (`notify_email`, `notify_email_deadlines`, `notify_email_hearings`, `notify_email_tasks`) como colunas boolean em `users`, expostas no `EditProfile` customizado. Notificação bell do Filament + e-mail via Zoho SMTP.
 
 ### Estrutura de localização do processo
 
@@ -118,12 +139,16 @@ Réplica visual dos cards do sistema legado (validado com a advogada). Três wid
 
 ## Testes e correções
 
-## O que falta construir
+- Pest 3 instalado (`pestphp/pest`, `pestphp/pest-plugin-laravel`). Suíte automatizada ainda não escrita — validação dos fluxos críticos (geração de PDF, sync Google, notificações) feita manualmente.
 
-- [ ] Sistema de notificações via e-mails de tarefas, prazos e audiências próximas de vencer 24 ou 48h:
-      1 - o usuário só recebe notificação do que ele inseriu e não geral
-      2 - Notificação opcional ou obrigatória?
+## Pendências antes do deploy
 
-- [ ] Verificar e testar o sistema de notificação da aplicação
+- [ ] Supervisor rodando worker das filas `default` e `notifications`
+- [ ] Cron do HestiaCP apontando para `schedule:run` (sem isso nenhum agendamento dispara)
+- [ ] `redirect_uri` do Google atualizado para o domínio de produção no Google Cloud Console
+- [ ] `.env` de produção: `APP_ENV=production`, `APP_DEBUG=false`, `QUEUE_CONNECTION=database`, SMTP Zoho, timezone
 
-- [ ] Dashboard customizada (somente no final)
+## Higiene (não-bloqueante)
+
+- [ ] `down()` da migration `add_notification_prefs_to_users` está vazio — só relevante para rollback em dev
+- [ ] (opcional) Testes de feature nos pontos mais sensíveis: idempotência de notificação, observers de sincronização Google

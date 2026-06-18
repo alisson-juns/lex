@@ -18,9 +18,9 @@ class User extends Authenticatable implements FilamentUser
     use Notifiable;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+    'name', 'email', 'password',
+    'notify_email', 'notify_email_deadlines',
+    'notify_email_hearings', 'notify_email_tasks',
     ];
 
     protected $hidden = [
@@ -32,7 +32,11 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
+            'notify_email' => 'boolean',
+            'notify_email_deadlines' => 'boolean',
+            'notify_email_hearings' => 'boolean',
+            'notify_email_tasks' => 'boolean',
         ];
     }
 
