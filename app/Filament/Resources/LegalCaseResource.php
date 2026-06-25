@@ -3,7 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Enums\CaseStatus;
+use App\Enums\CaseType;
 use App\Filament\Resources\LegalCaseResource\Pages;
+use App\Models\Agency;
 use App\Models\CourtName;
 use App\Models\CourtNumber;
 use App\Models\Forum;
@@ -32,6 +34,16 @@ class LegalCaseResource extends Resource
     {
         return $form->schema([
 
+            Forms\Components\Section::make('Tipo de Processo')
+                ->schema([
+                    Forms\Components\Select::make('type')
+                        ->label('Tipo')
+                        ->options(CaseType::options())
+                        ->default(CaseType::Judicial->value)
+                        ->required()
+                        ->live(),
+                ]),
+
             Forms\Components\Section::make('Identificação')
                 ->columns(2)
                 ->schema([
@@ -41,13 +53,19 @@ class LegalCaseResource extends Resource
 
                     Forms\Components\TextInput::make('case_number')
                         ->label('Nº do Processo')
-                        ->placeholder('Ex: 0000000-00.0000.0.00.0000')
-                        ->mask("0000000-00.0000.0.00.0000")
+                        ->placeholder(fn (Forms\Get $get) => $get('type') === CaseType::Judicial->value
+                            ? 'Ex: 0000000-00.0000.0.00.0000'
+                            : 'Número do protocolo / processo administrativo')
+                        ->mask(fn (Forms\Get $get) => $get('type') === CaseType::Judicial->value
+                            ? '0000000-00.0000.0.00.0000'
+                            : null)
                         ->maxLength(255),
                 ]),
 
+            // Localização judicial — visível apenas para processos Judiciais
             Forms\Components\Section::make('Localização')
                 ->columns(3)
+                ->visible(fn (Forms\Get $get) => $get('type') === CaseType::Judicial->value)
                 ->schema([
                     Forms\Components\Select::make('court_number_id')
                         ->label('Número da Vara')
@@ -66,6 +84,24 @@ class LegalCaseResource extends Resource
                         ->options(Forum::orderBy('name')->pluck('name', 'id'))
                         ->searchable()
                         ->preload(),
+                ]),
+
+            // Órgão — visível apenas para processos Administrativos
+            Forms\Components\Section::make('Órgão')
+                ->visible(fn (Forms\Get $get) => $get('type') === CaseType::Administrative->value)
+                ->schema([
+                    Forms\Components\Select::make('agency_id')
+                        ->label('Órgão')
+                        ->options(Agency::orderBy('name')->pluck('name', 'id'))
+                        ->searchable()
+                        ->preload()
+                        ->createOptionForm([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nome do Órgão')
+                                ->required()
+                                ->maxLength(255),
+                        ])
+                        ->requiredIf('type', CaseType::Administrative->value),
                 ]),
 
             Forms\Components\Section::make('Partes')
@@ -150,6 +186,13 @@ class LegalCaseResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Tipo')
+                    ->badge()
+                    ->formatStateUsing(fn (CaseType $state) => $state->label())
+                    ->color(fn (CaseType $state) => $state === CaseType::Judicial ? 'info' : 'warning')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('case_number')
                     ->label('Nº Processo')
                     ->searchable()
@@ -175,13 +218,18 @@ class LegalCaseResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('location')
-                    ->label('Localização')
+                    ->label('Localização / Órgão')
                     ->wrap()
-                    ->getStateUsing(fn (LegalCase $record): string => collect([
-                        $record->courtNumber?->number,
-                        $record->courtName?->name,
-                        $record->forum?->name,
-                    ])->filter()->join(' ')),
+                    ->getStateUsing(
+                        fn (LegalCase $record): string =>
+                        $record->type === CaseType::Administrative
+                            ? ($record->agency?->name ?? '—')
+                            : (collect([
+                                $record->courtNumber?->number,
+                                $record->courtName?->name,
+                                $record->forum?->name,
+                            ])->filter()->join(' ') ?: '—')
+                    ),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -199,6 +247,10 @@ class LegalCaseResource extends Resource
 
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('Tipo')
+                    ->options(CaseType::options()),
+
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options(

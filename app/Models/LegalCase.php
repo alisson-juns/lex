@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CaseStatus;
+use App\Enums\CaseType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,11 +21,13 @@ class LegalCase extends Model
     use LogsActivityInPortuguese;
 
     protected $fillable = [
+        'type',
         'folder_number',
         'case_number',
         'client_id',
         'enterprise_id',
         'forum_id',
+        'agency_id',
         'court_name_id',
         'court_number_id',
         'registered_by',
@@ -35,6 +38,7 @@ class LegalCase extends Model
 
     protected $casts = [
         'status' => CaseStatus::class,
+        'type'   => \App\Enums\CaseType::class,
     ];
 
     protected array $activitylogFields = [
@@ -43,6 +47,7 @@ class LegalCase extends Model
         'opponent_name',
         'status',
         'note',
+        'type',
     ];
 
     protected function activitylogEventDescriptions(): array
@@ -98,5 +103,10 @@ class LegalCase extends Model
     public function hearings(): HasMany
     {
         return $this->hasMany(Hearing::class);
+    }
+
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class);
     }
 }
