@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Promethys\Revive\Concerns\Recyclable;
 use App\Traits\LogsActivityInPortuguese;
 
 class Lawyer extends Model
 {
+    use HasFactory;
     use SoftDeletes;
     use Recyclable;
     use LogsActivityInPortuguese;

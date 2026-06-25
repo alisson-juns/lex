@@ -48,7 +48,7 @@ class PowerOfAttorneyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPowersOfAttorney::route('/'),
+            'index' => Pages\ListPowerOfAttorneys::route('/'),
             'edit'  => Pages\EditPowerOfAttorney::route('/{record}/edit'),
         ];
     }

@@ -43,7 +43,7 @@ class EnterprisePowerOfAttorneyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEnterprisePowersOfAttorney::route('/'),
+            'index' => Pages\ListEnterprisePowerOfAttorneys::route('/'),
             'edit'  => Pages\EditEnterprisePowerOfAttorney::route('/{record}/edit'),
         ];
     }
