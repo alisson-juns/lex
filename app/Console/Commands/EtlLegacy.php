@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\CaseStatus;
+use App\Enums\CaseType;
 use App\Models\Client;
 use App\Models\Lawyer;
 use App\Models\LegalCase;
@@ -18,33 +19,41 @@ class EtlLegacy extends Command
     protected $description = 'Migra o banco legado (admin_lex) para o schema LexFirma.';
 
     /**
-     * De-para de advogados: texto do legado (UPPER, trim) → chave interna.
-     * Valor array = processo com mais de um advogado (vínculo múltiplo no pivot).
-     * Ajuste conforme a query 4 do profiling revelar novas variações.
+     * Termos no campo "adverso" (nome_do_adverso) que marcam processo
+     * NAO judicial - administrativos/inventario, lancados manualmente depois.
+     */
+    private array $termosNaoJudiciais = ['INSS', 'ADMINISTRATIVO', 'INVENTÁRIO', 'INVENTARIO'];
+
+    /**
+     * De-para de advogados: texto do legado (UPPER, trim) -> chave interna.
+     * Valor array = processo com mais de um advogado (vinculo multiplo no pivot).
      */
     private array $mapAdvogados = [
-        'MARINA'       => ['marina'],
-        'MARINA TAURO' => ['marina'],
-        'TULA'         => ['tula'],
-        'MARINA/TULA'  => ['marina', 'tula'],
-        ''             => [],
+    'MARINA'       => ['marina'],
+    'MARINA TAURO' => ['marina'],
+    'TULA'         => ['tula'],
+    'TULA JUNS'    => ['tula'],
+    'MARINA/TULA'  => ['marina', 'tula'],
+    ''             => [],
     ];
 
     /**
-     * Cadastro-base dos advogados a criar no sistema novo.
-     * Marina entra como inativa (saiu da sociedade, mas consta em processos abertos).
-     * Preencha OAB/dados reais antes de rodar em produção.
+     * Cadastro-base dos advogados a criar. Marina entra inativa (saiu da
+     * sociedade, mas consta em processos abertos). Preencha OAB antes de producao.
      */
     private array $advogados = [
-        'marina' => ['name' => 'Marina Tauro', 'oab' => null, 'oab_state' => 'SP', 'active' => false],
-        'tula'   => ['name' => 'Tula',          'oab' => null, 'oab_state' => 'SP', 'active' => true],
+    'marina' => ['name' => 'Marina Tauro', 'oab' => '431280', 'oab_state' => 'SP', 'active' => false],
+    'tula'   => ['name' => 'Tula',          'oab' => '431326', 'oab_state' => 'SP', 'active' => true],
     ];
 
-    /** Mapa old_id (legado) → new_id (LexFirma), por entidade. */
-    private array $idMap = [
-        'client' => [],
-        'lawyer' => [],
-    ];
+    /** old_id (legado) -> new_id (LexFirma). */
+    private array $idMap = ['lawyer' => []];
+
+    /** CPF normalizado -> client_id (novo). Populado na fase de clientes. */
+    private array $cpfToClientId = [];
+
+    /** Anomalias acumuladas para relatorio final. */
+    private array $anomalias = [];
 
     public function handle(): int
     {
@@ -55,37 +64,32 @@ class EtlLegacy extends Command
             $this->warn('DRY-RUN: nada será gravado.');
         }
 
-        DB::transaction(function () use ($dry, $status) {
-            $this->migrarAdvogados($dry);
-            $this->migrarClientes($dry, $status);
-            $this->migrarProcessos($dry, $status);
-            // Próximas fases: audiências, tarefas, procurações.
+        try {
+            DB::transaction(function () use ($dry, $status) {
+                $this->migrarAdvogados();
+                $this->migrarClientes($dry, $status);
+                $this->migrarProcessos($status);
 
-            if ($dry) {
-                // Em dry-run, desfaz tudo no fim da transação.
-                throw new \RuntimeException('__DRY_RUN_ROLLBACK__');
-            }
-        });
+                if ($dry) {
+                    throw new DryRunRollback();
+                }
+            });
+        } catch (DryRunRollback) {
+            // Esperado em dry-run: transacao revertida.
+        }
 
-        $this->info('ETL concluído.');
+        $this->imprimirRelatorio();
+        $this->info($dry ? 'DRY-RUN concluído (nada gravado).' : 'ETL concluído.');
         return self::SUCCESS;
     }
 
-    /**
-     * Cria os advogados-base (Marina, Tula) de forma idempotente.
-     */
-    private function migrarAdvogados(bool $dry): void
+    private function migrarAdvogados(): void
     {
         $this->info('— Advogados');
 
         foreach ($this->advogados as $chave => $dados) {
-            if ($dry) {
-                $this->line("  [dry] criaria advogado: {$dados['name']} (active=" . ($dados['active'] ? '1' : '0') . ')');
-                continue;
-            }
-
             $lawyer = Lawyer::updateOrCreate(
-                ['name' => $dados['name']],          // chave natural simples (universo pequeno)
+                ['name' => $dados['name']],
                 [
                     'oab'       => $dados['oab'],
                     'oab_state' => $dados['oab_state'],
@@ -98,23 +102,20 @@ class EtlLegacy extends Command
         }
     }
 
-    /**
-     * Migra apenas os clientes vinculados a processos do status alvo.
-     * Junta clientes + documentos + endereco + contato + conjuge + tutelado.
-     */
     private function migrarClientes(bool $dry, string $status): void
     {
-        $this->info("— Clientes (vinculados a processos '{$status}')");
+        $this->info("— Clientes (vinculados a processos JUDICIAIS '{$status}')");
 
-        // CPFs (normalizados) que aparecem em processos do status alvo.
+        // CPFs de processos JUDICIAIS do status alvo (exclui administrativos).
         $cpfsAlvo = DB::connection('legacy')->table('processos')
             ->where('status_processo', $status)
-            ->pluck('cpf_cliente')
-            ->map(fn ($c) => $this->soNumeros($c))
+            ->get(['cpf_cliente', 'nome_do_adverso'])
+            ->reject(fn ($p) => $this->ehNaoJudicial($p->nome_do_adverso))
+            ->map(fn ($p) => $this->soNumeros($p->cpf_cliente))
             ->filter()
             ->unique();
 
-        // Clientes do legado cujo CPF (em 'documentos') está na lista alvo.
+
         $legacyClientes = DB::connection('legacy')->table('clientes as c')
             ->leftJoin('documentos as d', 'd.cliente_id', '=', 'c.id')
             ->select(
@@ -125,24 +126,21 @@ class EtlLegacy extends Command
                 'd.ctps_cliente as doc_ctps',
                 'd.outros_documentos_cliente as doc_outros'
             )
-            ->get()
-            ->filter(fn ($row) => $cpfsAlvo->contains($this->soNumeros($row->doc_cpf)));
+            ->get();
+
 
         $this->line("  {$legacyClientes->count()} clientes a migrar.");
 
         foreach ($legacyClientes as $lc) {
-            if ($dry) {
-                $this->line("  [dry] cliente: {$lc->nome_cliente} (cpf {$lc->doc_cpf})");
-                continue;
-            }
-
             $cpf = $this->soNumeros($lc->doc_cpf);
 
-            // Idempotência: chave natural = CPF (via client_documents).
+            if (strlen($cpf) !== 11) {
+                $this->anomalias[] = "Cliente '{$lc->nome_cliente}': CPF '{$lc->doc_cpf}' ("
+                    . strlen($cpf) . ' dígitos) — revisar.';
+            }
+
             $client = Client::updateOrCreate(
-                // Sem CPF na tabela clients; resolvemos pelo documento abaixo.
-                // Usamos nome+nascimento como fallback de unicidade na base.
-                ['name' => $lc->nome_cliente, 'date_of_birth' => $lc->nascimento_cliente],
+                ['name' => $lc->nome_cliente, 'date_of_birth' => $this->data($lc->nascimento_cliente)],
                 [
                     'gender'         => $lc->sexo_cliente,
                     'father'         => $lc->pai_cliente,
@@ -155,9 +153,10 @@ class EtlLegacy extends Command
                 ],
             );
 
-            $this->idMap['client'][$lc->id] = $client->id;
+            if ($cpf !== '') {
+                $this->cpfToClientId[$cpf] = $client->id;
+            }
 
-            // 1:1 — documentos
             $client->client_documents()->updateOrCreate([], [
                 'cpf'             => $cpf,
                 'rg'              => $lc->doc_rg,
@@ -171,7 +170,8 @@ class EtlLegacy extends Command
             $this->migrarConjuge($lc->id, $client);
             $this->migrarTutelados($lc->id, $client);
 
-            $this->line("  ok: {$lc->nome_cliente} → id {$client->id}");
+            $tag = $dry ? '[dry]' : 'ok:';
+            $this->line("  {$tag} {$lc->nome_cliente} → id {$client->id}");
         }
     }
 
@@ -230,7 +230,7 @@ class EtlLegacy extends Command
             'pis'            => $s->pis_conjuge,
             'ctps'           => $s->ctps_conjuge,
             'profession'     => $s->profissao_conjuge,
-            'date_of_birth'  => $s->nascimento_conjuge,
+            'date_of_birth'  => $this->data($s->nascimento_conjuge),
             'place_of_birth' => $s->naturalidade_conjuge,
             'nationality'    => $s->nacionalidade_conjuge,
             'phone'          => $s->telefone_conjuge,
@@ -251,43 +251,44 @@ class EtlLegacy extends Command
                 [
                     'name'          => $t->nome_tutelado,
                     'rg'            => $t->rg_tutelado,
-                    'date_of_birth' => $t->nascimento_tutelado,
+                    'date_of_birth' => $this->data($t->nascimento_tutelado),
                 ],
             );
         }
     }
 
-    /**
-     * Migra processos do status alvo, ligando cliente (por CPF) e advogados (de-para).
-     */
-    private function migrarProcessos(bool $dry, string $status): void
+    private function migrarProcessos(string $status): void
     {
-        $this->info("— Processos ('{$status}')");
+        $this->info("— Processos JUDICIAIS ('{$status}')");
 
         $processos = DB::connection('legacy')->table('processos')
             ->where('status_processo', $status)->get();
 
-        $this->line("  {$processos->count()} processos a migrar.");
+        $migrados = 0;
+        $pulados = 0;
 
         foreach ($processos as $p) {
-            // Resolve o cliente pelo CPF normalizado, via documento.
-            $cpf = $this->soNumeros($p->cpf_cliente);
-            $clientId = $this->resolverClientePorCpf($cpf);
-
-            if (! $clientId) {
-                $this->warn("  ⚠ processo id {$p->id} ('{$p->numero_processo}') sem cliente resolvido (cpf '{$p->cpf_cliente}') — PULADO.");
+            if ($this->ehNaoJudicial($p->nome_do_adverso)) {
+                $this->anomalias[] = "NÃO MIGRADO (administrativo): id {$p->id} "
+                    . "'{$p->numero_processo}' — adverso: {$p->nome_do_adverso}.";
+                $pulados++;
                 continue;
             }
 
-            if ($dry) {
-                $adv = $this->resolverAdvogados($p->nome_advogado);
-                $this->line("  [dry] processo {$p->numero_processo} → client {$clientId}, advs " . json_encode($adv));
+            $cpf = $this->soNumeros($p->cpf_cliente);
+            $clientId = $this->cpfToClientId[$cpf] ?? null;
+
+            if (! $clientId) {
+                $this->anomalias[] = "SEM CLIENTE: processo id {$p->id} "
+                    . "'{$p->numero_processo}' (cpf '{$p->cpf_cliente}') — revisar.";
+                $pulados++;
                 continue;
             }
 
             $case = LegalCase::updateOrCreate(
-                ['case_number' => $p->numero_processo],   // chave natural
+                ['case_number' => $p->numero_processo],
                 [
+                    'type'          => CaseType::Judicial,
                     'folder_number' => $p->numero_pasta_processo,
                     'client_id'     => $clientId,
                     'opponent_name' => $p->nome_do_adverso,
@@ -296,34 +297,35 @@ class EtlLegacy extends Command
                 ],
             );
 
-            // Vínculo advogado(s) via pivot — trata MARINA/TULA como dois.
             $lawyerIds = collect($this->resolverAdvogados($p->nome_advogado))
                 ->map(fn ($chave) => $this->idMap['lawyer'][$chave] ?? null)
-                ->filter()
-                ->values()
-                ->all();
+                ->filter()->values()->all();
 
             if ($lawyerIds) {
                 $case->lawyers()->syncWithoutDetaching($lawyerIds);
+            } else {
+                $this->anomalias[] = "SEM ADVOGADO: processo '{$p->numero_processo}' "
+                    . "(advogado legado: '{$p->nome_advogado}') — revisar.";
             }
 
+            $migrados++;
             $this->line("  ok: {$p->numero_processo} → case {$case->id}");
         }
+
+        $this->line("  → {$migrados} migrados, {$pulados} pulados.");
     }
 
-    /** Resolve client_id a partir do CPF normalizado (busca em client_documents). */
-    private function resolverClientePorCpf(string $cpf): ?int
+    private function ehNaoJudicial(?string $adverso): bool
     {
-        if ($cpf === '') {
-            return null;
+        $txt = strtoupper((string) $adverso);
+        foreach ($this->termosNaoJudiciais as $termo) {
+            if (str_contains($txt, $termo)) {
+                return true;
+            }
         }
-
-        return DB::table('client_documents')
-            ->where('cpf', $cpf)
-            ->value('client_id');
+        return false;
     }
 
-    /** Texto livre do legado → array de chaves de advogado. */
     private function resolverAdvogados(?string $texto): array
     {
         $chave = strtoupper(trim((string) $texto));
@@ -336,15 +338,50 @@ class EtlLegacy extends Command
             'aberto'      => CaseStatus::Open,
             'arquivado'   => CaseStatus::Archived,
             'cancelado'   => CaseStatus::Cancelled,
-            'concluído',
-            'concluido'   => CaseStatus::Closed,
+            'concluído', 'concluido' => CaseStatus::Closed,
             default       => CaseStatus::Open,
         };
     }
 
-    /** Remove tudo que não for dígito (normaliza CPF). */
     private function soNumeros(?string $valor): string
     {
         return preg_replace('/\D+/', '', (string) $valor) ?? '';
     }
+
+    /** Converte datas-lixo do legado (0000-00-00, vazio, -0001) em null. */
+    private function data(?string $valor): ?string
+    {
+        $v = trim((string) $valor);
+
+        // Vazio, zerado ou claramente inválido → null
+        if ($v === '' || str_starts_with($v, '0000') || str_starts_with($v, '-')) {
+            return null;
+        }
+
+        // Valida se é data real; se não for, null
+        try {
+            return \Carbon\Carbon::parse($v)->format('Y-m-d');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function imprimirRelatorio(): void
+    {
+        if (empty($this->anomalias)) {
+            $this->info('Sem anomalias.');
+            return;
+        }
+
+        $this->newLine();
+        $this->warn('=== RELATÓRIO DE ANOMALIAS (' . count($this->anomalias) . ') ===');
+        foreach ($this->anomalias as $a) {
+            $this->line('  • ' . $a);
+        }
+    }
+}
+
+/** Excecao interna para reverter a transacao em dry-run sem poluir o log. */
+class DryRunRollback extends \RuntimeException
+{
 }
