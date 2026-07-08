@@ -369,14 +369,18 @@ class EtlLegacy extends Command
     }
 
     /**
-     * A partir do texto legado, resolve (firstOrCreate) as 3 FKs de local
-     * e as atribui ao LegalCase já persistido.
+     * A partir do texto legado, resolve as 3 FKs de local e as atribui
+     * ao LegalCase já persistido.
+     *
+     * Para o fórum, tenta primeiro casar com um registro OFICIAL já
+     * existente ("Foro de X" / "Foro do X") em vez de criar duplicata
+     * a partir da cidade nua. Só cria novo se nada casar.
      */
     private function migrarLocal(LegalCase $case, ?string $localTexto): void
     {
         $p = $this->parseLocal($localTexto);
 
-        $case->forum_id        = $p['forum'] ? Forum::firstOrCreate(['name' => $p['forum']])->id : null;
+        $case->forum_id        = $this->resolverForum($p['forum']);
         $case->court_name_id   = $p['vara'] ? CourtName::firstOrCreate(['name' => $p['vara']])->id : null;
         $case->court_number_id = $p['numero'] ? CourtNumber::firstOrCreate(['number' => $p['numero']])->id : null;
 
@@ -385,6 +389,34 @@ class EtlLegacy extends Command
         if ($p['forum'] === null && trim((string) $localTexto) !== '') {
             $this->anomalias[] = "LOCAL sem 'Foro de': case {$case->id} — texto: '{$localTexto}'.";
         }
+    }
+
+    /**
+     * Resolve o forum_id casando a cidade extraída com o cadastro oficial.
+     * Ordem de tentativa:
+     *   1. Nome exato "Foro de <cidade>" ou "Foro do <cidade>"
+     *   2. Nome exato igual à cidade (caso já normalizado)
+     *   3. firstOrCreate no formato oficial "Foro de <cidade>" (fallback)
+     */
+    private function resolverForum(?string $cidade): ?int
+    {
+        $cidade = trim((string) $cidade);
+        if ($cidade === '') {
+            return null;
+        }
+
+        $oficial = Forum::where('name', 'Foro de ' . $cidade)
+            ->orWhere('name', 'Foro do ' . $cidade)
+            ->orWhere('name', $cidade)
+            ->first();
+
+        if ($oficial) {
+            return $oficial->id;
+        }
+
+        // Não existe no cadastro oficial (ex.: comarca de outro tribunal).
+        // Cria no padrão oficial para manter consistência.
+        return Forum::firstOrCreate(['name' => 'Foro de ' . $cidade])->id;
     }
 
     private function ehNaoJudicial(?string $adverso): bool

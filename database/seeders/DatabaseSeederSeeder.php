@@ -15,6 +15,11 @@ class DatabaseSeederSeeder extends Seeder
         $this->call(PowerOfAttorneyTemplateSeeder::class);
         $this->call(EnterprisePowerOfAttorneyTemplateSeeder::class);
         $this->call(EnterpriseFeeAgreementTemplateSeeder::class);
+        $this->call(CourtNameSeeder::class);
+        $this->call(CourtNumberSeeder::class);
+        $this->call(FeeAgreementTemplateSeeder::class);
+        $this->call(GratuityDeclarationTemplateSeeder::class);
+        $this->call(RolesAndPermissionsSeeder::class);
 
     }
 }
