@@ -339,16 +339,17 @@ class EtlLegacy extends Command
             return $vazio;
         }
 
-        // Separa em "Foro de": esquerda = vara, direita = fórum/comarca.
-        $partes = preg_split('/\s+Foro\s+de\s+/iu', $txt, 2);
+        // Remove sufixo administrativo "/DEECRIM UR7" (e variações) do fim.
+        $txt = trim(preg_replace('#\s*/\s*DEECRIM.*$#iu', '', $txt));
 
-        if (count($partes) === 2) {
-            $ladoVara = trim($partes[0]);
-            $forum    = trim($partes[1]);
-        } else {
-            // Sem "Foro de" no texto — guarda tudo como vara, fórum fica null.
-            $ladoVara = $txt;
-            $forum    = null;
+        $ladoVara = $txt;
+        $forum    = null;
+
+        // Formato padrão "Foro de <cidade>" ou "Foro do <cidade>":
+        // separa em vara (esquerda) e fórum/comarca (direita).
+        if (preg_match('/^(.*?)\s+Foro\s+d[eo]\s+(.+)$/iu', $txt, $m)) {
+            $ladoVara = trim($m[1]);
+            $forum    = trim($m[2]);
         }
 
         // Extrai o número inicial da vara (ex.: "1ª", "75ª"), se houver.
