@@ -53,12 +53,8 @@ class LegalCaseResource extends Resource
 
                     Forms\Components\TextInput::make('case_number')
                         ->label('Nº do Processo')
-                        ->placeholder(fn (Forms\Get $get) => $get('type') === CaseType::Judicial->value
-                            ? 'Ex: 0000000-00.0000.0.00.0000'
-                            : 'Número do protocolo / processo administrativo')
-                        ->mask(fn (Forms\Get $get) => $get('type') === CaseType::Judicial->value
-                            ? '0000000-00.0000.0.00.0000'
-                            : null)
+                        ->placeholder('Ex: 0000000-00.0000.0.00.0000')
+                        ->helperText('Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO')
                         ->maxLength(255),
                 ]),
 
