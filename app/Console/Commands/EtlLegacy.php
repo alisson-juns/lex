@@ -5,6 +5,9 @@ namespace App\Console\Commands;
 use App\Enums\CaseStatus;
 use App\Enums\CaseType;
 use App\Models\Client;
+use App\Models\CourtName;
+use App\Models\CourtNumber;
+use App\Models\Forum;
 use App\Models\Lawyer;
 use App\Models\LegalCase;
 use Illuminate\Console\Command;
@@ -297,6 +300,8 @@ class EtlLegacy extends Command
                 ],
             );
 
+            $this->migrarLocal($case, $p->local_processo);
+
             $lawyerIds = collect($this->resolverAdvogados($p->nome_advogado))
                 ->map(fn ($chave) => $this->idMap['lawyer'][$chave] ?? null)
                 ->filter()->values()->all();
@@ -313,6 +318,72 @@ class EtlLegacy extends Command
         }
 
         $this->line("  → {$migrados} migrados, {$pulados} pulados.");
+    }
+
+    /**
+     * Faz o parsing do texto livre `local_processo` do legado em 3 partes:
+     * número da vara, nome da vara e fórum (comarca).
+     *
+     * Formato esperado: "[Nª] Vara <descrição> Foro de <cidade>"
+     * Ex.: "1ª Vara Cível Foro de São Vicente"
+     *   → numero: "1ª", vara: "Vara Cível", forum: "São Vicente"
+     *
+     * @return array{numero: ?string, vara: ?string, forum: ?string}
+     */
+    private function parseLocal(?string $texto): array
+    {
+        $txt = trim((string) $texto);
+        $vazio = ['numero' => null, 'vara' => null, 'forum' => null];
+
+        if ($txt === '') {
+            return $vazio;
+        }
+
+        // Separa em "Foro de": esquerda = vara, direita = fórum/comarca.
+        $partes = preg_split('/\s+Foro\s+de\s+/iu', $txt, 2);
+
+        if (count($partes) === 2) {
+            $ladoVara = trim($partes[0]);
+            $forum    = trim($partes[1]);
+        } else {
+            // Sem "Foro de" no texto — guarda tudo como vara, fórum fica null.
+            $ladoVara = $txt;
+            $forum    = null;
+        }
+
+        // Extrai o número inicial da vara (ex.: "1ª", "75ª"), se houver.
+        $numero = null;
+        $vara   = $ladoVara;
+
+        if (preg_match('/^\s*(\d+)\s*[ªº]\s*(.*)$/u', $ladoVara, $m)) {
+            $numero = $m[1] . 'ª';
+            $vara   = trim($m[2]);
+        }
+
+        return [
+            'numero' => $numero ?: null,
+            'vara'   => $vara ?: null,
+            'forum'  => $forum ?: null,
+        ];
+    }
+
+    /**
+     * A partir do texto legado, resolve (firstOrCreate) as 3 FKs de local
+     * e as atribui ao LegalCase já persistido.
+     */
+    private function migrarLocal(LegalCase $case, ?string $localTexto): void
+    {
+        $p = $this->parseLocal($localTexto);
+
+        $case->forum_id        = $p['forum'] ? Forum::firstOrCreate(['name' => $p['forum']])->id : null;
+        $case->court_name_id   = $p['vara'] ? CourtName::firstOrCreate(['name' => $p['vara']])->id : null;
+        $case->court_number_id = $p['numero'] ? CourtNumber::firstOrCreate(['number' => $p['numero']])->id : null;
+
+        $case->save();
+
+        if ($p['forum'] === null && trim((string) $localTexto) !== '') {
+            $this->anomalias[] = "LOCAL sem 'Foro de': case {$case->id} — texto: '{$localTexto}'.";
+        }
     }
 
     private function ehNaoJudicial(?string $adverso): bool
