@@ -304,18 +304,23 @@ class LawyerResource extends Resource
                                 ->columns(3),
                         ]),
 
-                    Forms\Components\Select::make('user_id')
-                        ->label('Usuário do sistema')
-                        ->options(
-                            User::orderBy('name')
-                                ->get()
-                                ->mapWithKeys(fn (User $user) => [
-                                    $user->id => "{$user->name} ({$user->email})",
-                                ])
-                        )
-                        ->searchable()
-                        ->nullable()
-                        ->helperText('Vincule um usuário para advogados internos (recebem notificações). Deixe em branco para advogados externos.'),
+                    Step::make('Acesso ao Sistema')
+                        ->icon('heroicon-m-user-circle')
+                        ->description('Vínculo do advogado com um usuário do sistema')
+                        ->schema([
+                            Forms\Components\Select::make('user_id')
+                                ->label('Usuário do sistema')
+                                ->options(
+                                    User::orderBy('name')
+                                        ->get()
+                                        ->mapWithKeys(fn (User $user) => [
+                                            $user->id => "{$user->name} ({$user->email})",
+                                        ])
+                                )
+                                ->searchable()
+                                ->nullable()
+                                ->helperText('Vincule um usuário para advogados internos (recebem notificações). Deixe em branco para advogados externos.'),
+                        ]),
                 ])
                 ->columnSpanFull(),
             ]);
