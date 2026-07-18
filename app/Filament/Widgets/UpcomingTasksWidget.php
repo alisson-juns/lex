@@ -19,7 +19,7 @@ class UpcomingTasksWidget extends Widget
     public function getTasks(): Collection
     {
         return Task::query()
-            ->whereNotIn('status', [TaskStatus::completed->value, TaskStatus::cancelled->value])
+            ->whereNotIn('status', [TaskStatus::Completed->value, TaskStatus::Cancelled->value])
             ->whereDate('due_date', '>=', now()->toDateString())
             ->whereDate('due_date', '<=', now()->addDays(7)->toDateString())
             ->with('legalCase', 'lawyers')
