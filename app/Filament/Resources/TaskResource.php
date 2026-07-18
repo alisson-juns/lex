@@ -154,6 +154,17 @@ class TaskResource extends Resource
                     ->label('Advogado')
                     ->relationship('lawyers', 'name'),
 
+                Tables\Filters\TernaryFilter::make('hide_completed')
+                    ->label('Concluídas')
+                    ->placeholder('Ocultar concluídas')
+                    ->trueLabel('Mostrar todas')
+                    ->falseLabel('Apenas concluídas')
+                    ->queries(
+                        true:  fn (Builder $q) => $q,
+                        false: fn (Builder $q) => $q->where('status', TaskStatus::Completed->value),
+                        blank: fn (Builder $q) => $q->where('status', '!=', TaskStatus::Completed->value),
+                    ),
+
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([

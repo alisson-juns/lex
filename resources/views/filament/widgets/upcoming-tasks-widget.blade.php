@@ -30,6 +30,9 @@
                                 <span class="fi-card-label"> às {{ $t['time'] }}</span>
                             @endif
                         </div>
+                        @if ($t['description'])
+                            <div class="fi-card-row"><span class="fi-card-label">Descrição:</span> {{ $t['description'] }}</div>
+                        @endif
                         @if ($t['process'])
                             <div class="fi-card-row"><span class="fi-card-label">Processo:</span> {{ $t['process'] }}</div>
                         @endif

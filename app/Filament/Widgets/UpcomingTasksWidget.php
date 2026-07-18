@@ -19,7 +19,7 @@ class UpcomingTasksWidget extends Widget
     public function getTasks(): Collection
     {
         return Task::query()
-            ->whereNotIn('status', [TaskStatus::Completed->value, TaskStatus::Cancelled->value])
+            ->whereNotIn('status', [TaskStatus::completed->value, TaskStatus::cancelled->value])
             ->whereDate('due_date', '>=', now()->toDateString())
             ->whereDate('due_date', '<=', now()->addDays(7)->toDateString())
             ->with('legalCase', 'lawyers')
@@ -41,6 +41,7 @@ class UpcomingTasksWidget extends Widget
                     },
                     'date'       => $task->due_date->format('d/m/Y'),
                     'time'       => $task->due_time ? substr($task->due_time, 0, 5) : null,
+                    'description' => $task->description,
                     'process'    => $task->legalCase?->case_number,
                     'lawyers'    => $task->lawyers->pluck('name')->join(', '),
                     'url'        => TaskResource::getUrl('view', ['record' => $task->id]),
