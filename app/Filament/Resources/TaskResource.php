@@ -110,6 +110,11 @@ class TaskResource extends Resource
                     ->searchable()
                     ->limit(40),
 
+                Tables\Columns\TextColumn::make('description')
+                    ->label('Descrição')
+                    ->searchable()
+                    ->limit(40),
+
                 Tables\Columns\TextColumn::make('lawyers.name')
                     ->label('Advogado(s)')
                     ->badge()
